@@ -1,0 +1,449 @@
+# =====================================================================
+# config/thresholds.yaml
+# ---------------------------------------------------------------------
+# EVERY numeric threshold in the engine lives here (CLAUDE.md R4).
+# Changing a number is a config change with a changelog entry, never a
+# code edit. Each computed row stores `version` so historical results
+# stay reconstructible after a bump (ENGINE_SPEC §1, §11).
+#
+# Band representation (consumed by engine.bands.match_band):
+#   Each band is a mapping with exactly one comparison operator key
+#   (le | lt | gt | ge | eq) whose value is the boundary, plus `points`.
+#   Bands are evaluated top-down; the FIRST matching band wins.
+#   No band matches -> `default` points (always 0 here == MISSING/none).
+# Compound sub-criteria (named thresholds, logic in code) are grouped
+# under `params:` within their pillar.
+# =====================================================================
+
+version: "1.0.0"
+last_verified: "2026-07-24"
+governing_standard: "AAOIFI"
+# Screening denominator convention (ENGINE_SPEC §2.6).
+denominator_convention: "MCAP_AVG_12M"
+
+changelog:
+  - version: "1.0.0"
+    date: "2026-07-24"
+    note: >-
+      Initial encoding from ENGINE_SPEC.md §2 and §4. AAOIFI Standard 21
+      screening limits (0.05 / 0.30 / 0.30 / 0.49). Execution fee
+      parameters intentionally left null and must be verified against
+      Thndr's published schedule before any live run (ENGINE_SPEC §7.3).
+
+# =====================================================================
+# SHARIAH GATE (ENGINE_SPEC §2)
+# =====================================================================
+shariah:
+  screens:
+    A:  # Business activity — non-permissible revenue ratio
+      name: "Business Activity"
+      threshold: 0.05
+    B:  # Impure income ratio
+      name: "Impure Income"
+      threshold: 0.05
+    C:  # Interest-bearing debt
+      name: "Debt"
+      threshold: 0.30
+    D:  # Interest-bearing / liquid assets
+      name: "Liquidity"
+      threshold: 0.30
+    E:  # Receivables
+      name: "Receivables"
+      threshold: 0.49
+
+  # Status classification by utilisation = ratio / threshold (§2.7).
+  # Upper bound of each band is inclusive (<=).
+  status_bands:
+    GREEN:  {le: 0.65}
+    AMBER:  {le: 0.85}
+    ORANGE: {le: 1.00}
+    # anything above 1.00 -> RED
+
+  # Filing staleness (EXTRACTION_SPEC §6 V10; BUILD_SPEC failure modes).
+  staleness_days: 180
+
+# =====================================================================
+# SCORING MODEL — 100 POINTS (ENGINE_SPEC §4)
+# =====================================================================
+scoring:
+  pillar_maxima:
+    P1: 25
+    P2: 20
+    P3: 15
+    P4: 15
+    P5: 10
+    P6: 10
+    P7: 5
+  total_max: 100
+
+  # ---- Pillar 1 — Shariah Headroom (25) — all `le` (§4.1) ----------
+  P1:
+    "1A":
+      points_max: 8
+      bands:
+        - {le: 0.000, points: 8}
+        - {le: 0.005, points: 7}
+        - {le: 0.015, points: 5}
+        - {le: 0.025, points: 3}
+        - {le: 0.040, points: 1}
+        - {le: 0.050, points: 0.5}
+      default: 0
+    "1B":
+      points_max: 7
+      bands:
+        - {le: 0.30, points: 7}
+        - {le: 0.45, points: 6}
+        - {le: 0.60, points: 4.5}
+        - {le: 0.75, points: 3}
+        - {le: 0.90, points: 1.5}
+        - {le: 1.00, points: 0.5}
+      default: 0
+    "1C":
+      points_max: 5
+      bands:
+        - {le: 0.30, points: 5}
+        - {le: 0.45, points: 4}
+        - {le: 0.60, points: 3}
+        - {le: 0.75, points: 2}
+        - {le: 0.90, points: 1}
+        - {le: 1.00, points: 0}
+      default: 0
+    "1D":
+      points_max: 3
+      bands:
+        - {le: 0.40, points: 3}
+        - {le: 0.60, points: 2}
+        - {le: 0.80, points: 1}
+        - {le: 1.00, points: 0}
+      default: 0
+    "1E":
+      points_max: 2
+      params:
+        strong_streak_quarters: 8   # >=8 quarters AND trend improving/flat -> 2
+        stable_streak_quarters: 4   # >=4 -> 1.5 (stable) / 0.75 (deteriorating)
+        # trend = linear slope of worst screen utilisation over last 4
+        # filings; slope <= improving_slope_max is "improving/flat".
+        improving_slope_max: 0.0
+        history_required: 4
+      points:
+        strong: 2
+        stable: 1.5
+        deteriorating: 0.75
+        insufficient: 0
+
+  # ---- Pillar 2 — Financial Strength (20) (§4.2) ------------------
+  P2:
+    "2A":  # net debt / EBITDA ; net cash handled in code
+      points_max: 5
+      params: {net_cash_points: 5}
+      bands:
+        - {lt: 1.0, points: 4}
+        - {lt: 2.0, points: 3}
+        - {lt: 3.0, points: 1.5}
+        - {lt: 4.0, points: 0.5}
+      default: 0
+    "2B":  # EBIT / finance cost ; no finance cost handled in code
+      points_max: 4
+      params: {no_finance_cost_points: 4}
+      bands:
+        - {gt: 10, points: 4}
+        - {gt: 6, points: 3}
+        - {gt: 3, points: 2}
+        - {gt: 1.5, points: 1}
+      default: 0
+    "2C":  # current & quick ratio — compound (§4.2)
+      points_max: 4
+      params:
+        cr_high: 2.0
+        qr_high: 1.2
+        cr_mid: 1.5
+        qr_mid: 1.0
+        cr_low: 1.2
+        cr_min: 1.0
+      points: {tier4: 4, tier3: 3, tier2: 2, tier1: 1}
+    "2D":  # OCF / net income (TTM)
+      points_max: 4
+      bands:
+        - {gt: 1.2, points: 4}
+        - {gt: 1.0, points: 3.5}
+        - {gt: 0.8, points: 2.5}
+        - {gt: 0.6, points: 1}
+      default: 0
+    "2E":  # FX resilience — categorical (§4.2)
+      points_max: 3
+      params:
+        net_fx_liability_equity_max: 0.20  # net FX liability < 20% of equity -> 1
+      points: {hedged: 3, balanced: 2, small_liability: 1, exposed: 0}
+
+  # ---- Pillar 3 — Earnings Quality (15) (§4.3) -------------------
+  P3:
+    "3A":  # (net_income - OCF) / avg_total_assets ; accrual ratio
+      points_max: 4
+      bands:
+        - {lt: 0.00, points: 4}
+        - {lt: 0.03, points: 3}
+        - {lt: 0.06, points: 2}
+        - {lt: 0.10, points: 1}
+      default: 0
+    "3B":  # receivables growth / revenue growth ; needs >=5 quarters
+      points_max: 3
+      params: {history_required: 5}
+      bands:
+        - {lt: 1.0, points: 3}
+        - {le: 1.2, points: 2}
+        - {le: 1.5, points: 1}
+      default: 0
+    "3C":  # non-operating income / PBT
+      points_max: 3
+      bands:
+        - {lt: 0.05, points: 3}
+        - {lt: 0.15, points: 2}
+        - {lt: 0.30, points: 1}
+      default: 0
+      alert_drop_bands: 2   # 3C drops two bands in one quarter -> alert
+    "3D":  # stdev of operating margin, 8 quarters
+      points_max: 3
+      params: {history_required: 8}
+      bands:
+        - {lt: 0.015, points: 3}
+        - {lt: 0.030, points: 2}
+        - {lt: 0.050, points: 1}
+      default: 0
+    "3E":  # audit & disclosure integrity — categorical + VETO
+      points_max: 2
+      points: {clean_immaterial_rpt: 2, clean_material_rpt: 1, emphasis: 0.5, adverse: 0}
+
+  # ---- Pillar 4 — Valuation (15) (§4.4) -------------------------
+  P4:
+    "4A":  # equity risk premium (earnings yield - tbill_1y)
+      points_max: 4
+      bands:
+        - {gt: 0.15, points: 4}
+        - {gt: 0.10, points: 3}
+        - {gt: 0.05, points: 2}
+        - {gt: 0.00, points: 1}
+      default: 0
+    "4B":  # EV/EBITDA vs own 5-yr median ; needs >=5 yrs else sector
+      points_max: 3
+      params: {history_required: 5}
+      # discount = (median - ev_ebitda) / median ; positive = cheaper
+      bands:
+        - {gt: 0.30, points: 3}
+        - {gt: 0.15, points: 2}
+        - {ge: -0.15, points: 1}    # within +/-15%
+        - {ge: -1.0, points: 0.5}   # >15% above (up to fully expensive)
+      default: 0
+    "4C":  # P/B vs justified P/B (roe/0.20) — compound (§4.4)
+      points_max: 3
+      params:
+        cost_of_equity: 0.20   # justified_pb = roe / cost_of_equity
+        within_pct: 0.20
+        near_pct: 0.50
+      points: {below: 3, within: 2, near: 1, above: 0}
+    "4D":  # FCF yield
+      points_max: 3
+      bands:
+        - {gt: 0.15, points: 3}
+        - {gt: 0.10, points: 2}
+        - {gt: 0.05, points: 1}
+        - {gt: 0.00, points: 0.5}
+      default: 0
+    "4E":  # dividend yield & sustainability — compound (§4.4)
+      points_max: 2
+      params:
+        high_yield: 0.08
+        high_payout_of_fcf_max: 0.60
+        mid_yield: 0.05
+        low_yield: 0.03
+      points: {tier2: 2, tier1_5: 1.5, tier1: 1, any: 0.5, none: 0}
+
+  # ---- Pillar 5 — Growth, Real (10) (§4.5) ---------------------
+  P5:
+    "5A":  # real revenue CAGR, 3yr
+      points_max: 4
+      bands:
+        - {gt: 0.15, points: 4}
+        - {gt: 0.08, points: 3}
+        - {gt: 0.03, points: 2}
+        - {gt: 0.00, points: 1}
+      default: 0
+    "5B":  # real EPS CAGR, 3yr
+      points_max: 3
+      bands:
+        - {gt: 0.15, points: 3}
+        - {gt: 0.08, points: 2.25}
+        - {gt: 0.03, points: 1.5}
+        - {gt: 0.00, points: 0.75}
+      default: 0
+    "5C":  # physical volume growth
+      points_max: 2
+      bands:
+        - {gt: 0.10, points: 2}
+        - {gt: 0.05, points: 1.5}
+        - {gt: 0.00, points: 1}
+        - {ge: 0.00, points: 0.5}   # flat (== 0)
+      default: 0                      # declining (< 0)
+    "5D":  # ROIC vs cost of capital — categorical (§4.5)
+      points_max: 1
+      points: {exceeds_stable: 1, marginal: 0.5, below: 0}
+
+  # ---- Pillar 6 — Technical Strength & Tradability (10) (§4.6) --
+  P6:
+    "6A":  # price vs 200-DMA — compound
+      points_max: 3
+      params: {below_tolerance: 0.10}   # below by <=10% -> 1
+      points: {above_rising: 3, above_flat: 2, near_below: 1, far_below: 0}
+    "6B":  # target position / ADTV(60) — HARD LIQUIDITY VETO
+      points_max: 4
+      bands:
+        - {le: 0.01, points: 4}
+        - {le: 0.03, points: 3}
+        - {le: 0.05, points: 2}
+        - {le: 0.10, points: 1}
+      default: 0                          # > 0.10 -> 0 + LIQUIDITY VETO
+      veto_above: 0.10
+    "6C":  # 50/200 DMA + RSI(14) — compound
+      points_max: 2
+      params:
+        rsi_low: 40
+        rsi_high: 65
+        rsi_overbought: 75
+        rsi_oversold: 25
+      points: {both: 2, either: 1, extreme: 0}
+    "6D":  # 6-month relative strength vs EGX30 — compound
+      points_max: 1
+      params: {near_pct: 0.05}
+      points: {outperforming: 1, near: 0.5, underperforming: 0}
+
+  # ---- Pillar 7 — Governance (5) (§4.7) ------------------------
+  P7:
+    "7A":  # filing timeliness & note completeness — categorical
+      points_max: 1.5
+      points: {on_time_full: 1.5, on_time_thin: 1, occasional_delay: 0.5, repeated: 0}
+    "7B":  # board independence — compound
+      points_max: 1
+      params: {min_independent_fraction: 0.3333333333}
+      points: {independent_split: 1, independent_only: 0.5, weak: 0}
+    "7C":  # free float & minority record — compound
+      points_max: 1
+      params: {high_float: 0.30, mid_float: 0.15}
+      points: {high_clean: 1, mid: 0.5, low: 0}
+    "7D":  # related-party transactions — categorical
+      points_max: 1
+      points: {immaterial_disclosed: 1, material_arms_length: 0.5, material_opaque: 0}
+    "7E":  # capital allocation record — categorical
+      points_max: 0.5
+      points: {consistent: 0.5, else: 0}
+
+  # Score bands (§4.8)
+  bands:
+    - {ge: 90,    band: "EXCEPTIONAL"}
+    - {ge: 85,    band: "HIGH_CONVICTION"}
+    - {ge: 80,    band: "INVESTABLE"}
+    - {ge: 75,    band: "MINIMUM"}
+    - {ge: 65,    band: "WATCH_ONLY"}
+    - {ge: 55,    band: "REDUCE"}
+    - {ge: 0,     band: "EXIT"}
+
+# =====================================================================
+# DECISION ENGINE (ENGINE_SPEC §5)
+# =====================================================================
+decisions:
+  # Priority 3 score/valuation matrix rows are encoded in code against
+  # these named cut points to keep the priority ordering explicit.
+  score_high: 85
+  score_min: 75
+  score_watch: 65
+  score_reduce: 55
+  gap_buy: 0.25
+  gap_add: 0.15
+  gap_hold_low: -0.15
+  gap_hold_high: 0.15
+  gap_reduce: -0.25
+  gap_buy_starter: 0.30
+  reason_min_chars: 30
+  falsification_min_chars: 20
+  fair_value:
+    cost_of_equity_real: null   # optional DCF disabled by default
+
+# =====================================================================
+# WATCHLIST (ENGINE_SPEC §6)
+# =====================================================================
+watchlist:
+  high_conviction:
+    min_score: 82
+    min_6b_points: 2
+    min_gap: 0.0
+  buy_on_pullback:
+    min_score: 75
+    gap_trigger: -0.15
+    rsi_trigger: 70
+    above_200dma_trigger: 0.20
+  hold:
+    score_low: 65
+    score_high: 74.99
+  remove:
+    max_score: 65
+  movements:
+    hold_to_high_conviction_reviews: 2
+    remove_to_hold_reviews: 2
+    remove_to_hold_min_score: 70
+    stale_pullback_reviews: 4
+
+# =====================================================================
+# PORTFOLIO (ENGINE_SPEC §7)
+# =====================================================================
+portfolio:
+  target_weights:
+    - {ge: 90, weight: 0.275}
+    - {ge: 85, weight: 0.225}
+    - {ge: 80, weight: 0.175}
+    - {ge: 75, weight: 0.125}
+    - {ge: 0,  weight: 0.0}
+  constraints:
+    max_single_position: 0.30
+    max_single_sector: 0.40
+    min_position_size: 0.10
+    min_holdings: 3            # applies once capital >= min_holdings_capital
+    min_holdings_capital: 3000
+    max_holdings: 8            # applies below max_holdings_capital
+    max_holdings_capital: 50000
+    cash_reserve_min: 0.10
+    cash_reserve_max: 0.20
+    rebalance_band: 0.25
+    max_trade_cost_pct: 0.010
+  # Execution fees — MUST be verified against Thndr before live run.
+  # Left null on purpose; the trade-cost gate fails loudly if unset
+  # (ENGINE_SPEC §7.3).
+  execution:
+    commission_pct: null
+    min_fee_egp: null
+    levies_pct: null
+    tax_pct: null
+
+# =====================================================================
+# PURIFICATION (ENGINE_SPEC §8)
+# =====================================================================
+purification:
+  basis: "DIVIDENDS"   # DIVIDENDS | TOTAL_RETURN
+
+# =====================================================================
+# MATERIAL CHANGE DETECTION (ENGINE_SPEC §9)
+# =====================================================================
+material_change:
+  real_revenue_yoy_pp: 0.10
+  net_profit_yoy_pct: 0.25
+  operating_margin_bps: 0.03
+  gross_margin_bps: 0.02
+  ocf_pct: 0.30
+  ocf_ni_ttm_floor: 0.70
+  interest_bearing_debt_pct: 0.20
+  interest_bearing_debt_assets_bps: 0.05
+  net_debt_ebitda_levels: [2.0, 3.0]
+  interest_income_rev_pct: 0.03      # early Shariah warning
+  receivables_dso_days: 20
+  receivables_growth_mult: 1.5
+  cash_balance_pct: 0.40
+  current_ratio_floor: 1.2
+  pe_median_pct: 0.30
+  dilution_pct: 0.03

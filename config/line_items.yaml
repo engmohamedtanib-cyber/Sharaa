@@ -1,0 +1,200 @@
+# =====================================================================
+# config/line_items.yaml
+# ---------------------------------------------------------------------
+# Extraction dictionary (EXTRACTION_SPEC §3). Canonical keys mapped to
+# Arabic/English caption synonyms. Egyptian issuers vary wording, so
+# synonym lists are extensible WITHOUT code changes (add captions here).
+#
+# `critical: true` marks the 12 items whose extraction accuracy must be
+# >=99% (EXTRACTION_SPEC §3.1) — a wrong value here invalidates a screen.
+# =====================================================================
+
+version: "1.0.0"
+
+# ---- The Islamic-vs-conventional financing split (EXTRACTION_SPEC §3.2)
+# The single most consequential distinction. Islamic financing is
+# EXCLUDED from Screen C's numerator. If a borrowing line cannot be
+# confidently classified either way -> DATA_INSUFFICIENT (never default).
+financing_classification:
+  conventional_debt_captions:
+    ar: ["قروض بنكية", "تسهيلات ائتمانية", "سحب على المكشوف",
+         "قروض طويلة الأجل", "سندات", "أوراق دفع"]
+    en: ["bank loans", "credit facilities", "overdraft",
+         "long-term loans", "bonds", "notes payable"]
+  islamic_financing_captions:
+    ar: ["مرابحة", "إجارة", "مشاركة", "مضاربة", "صكوك",
+         "تمويل إسلامي", "استصناع", "سلم"]
+    en: ["murabaha", "ijara", "musharaka", "mudaraba", "sukuk",
+         "islamic financing", "istisna", "salam"]
+
+items:
+  # ================= CRITICAL (§3.1) — >=99% accuracy =================
+  total_assets:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["إجمالي الأصول", "مجموع الأصول", "اجمالى الاصول"]
+    en: ["total assets"]
+  cash_and_equivalents:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["النقدية وما في حكمها", "نقدية وأرصدة لدى البنوك", "النقدية ومرادفاتها"]
+    en: ["cash and cash equivalents", "cash and bank balances"]
+  time_deposits:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["ودائع لأجل", "ودائع ثابتة"]
+    en: ["time deposits", "fixed deposits", "term deposits"]
+  treasury_bills_and_bonds:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["أذون خزانة", "سندات خزانة", "أذون وسندات خزانة"]
+    en: ["treasury bills", "treasury bonds", "t-bills"]
+  accounts_receivable:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["العملاء", "المدينون", "ذمم مدينة", "عملاء وأوراق قبض"]
+    en: ["accounts receivable", "trade receivables", "trade debtors"]
+  short_term_borrowings:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["قروض قصيرة الأجل", "الجزء المتداول من القروض", "تسهيلات ائتمانية قصيرة الأجل"]
+    en: ["short-term borrowings", "short-term loans", "current portion of borrowings"]
+  long_term_borrowings:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["قروض طويلة الأجل", "قروض بنكية طويلة الأجل"]
+    en: ["long-term borrowings", "long-term loans", "non-current borrowings"]
+  bank_overdraft:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["سحب على المكشوف", "بنوك سحب على المكشوف"]
+    en: ["bank overdraft", "overdraft"]
+  bonds_payable:
+    statement: BALANCE_SHEET
+    critical: true
+    ar: ["سندات", "سندات مستحقة الدفع", "قرض سندات"]
+    en: ["bonds payable", "bonds", "debentures"]
+  total_revenue:
+    statement: INCOME_STATEMENT
+    critical: true
+    ar: ["إيرادات النشاط", "صافي المبيعات", "الإيرادات", "إيرادات التشغيل"]
+    en: ["total revenue", "revenue", "net sales", "turnover", "operating revenue"]
+  interest_income:
+    # HIGHEST-RISK ITEM (§3.1). Mandatory note-level extraction (§3.3).
+    statement: INCOME_STATEMENT
+    critical: true
+    note_level: true
+    ar: ["إيرادات الفوائد", "عائد الودائع", "فوائد دائنة", "عوائد استثمار في أذون خزانة"]
+    en: ["interest income", "finance income", "deposit income"]
+  net_profit_attributable:
+    statement: INCOME_STATEMENT
+    critical: true
+    ar: ["صافي الربح الخاص بمساهمي الشركة الأم", "صافي ربح العام الخاص بالمساهمين"]
+    en: ["net profit attributable to owners", "profit attributable to equity holders of the parent"]
+
+  # ================= SUPPORTING (§3.5) ==============================
+  inventory:
+    statement: BALANCE_SHEET
+    ar: ["المخزون", "البضاعة", "مخزون"]
+    en: ["inventory", "inventories", "stock"]
+  total_current_assets:
+    statement: BALANCE_SHEET
+    ar: ["إجمالي الأصول المتداولة", "مجموع الأصول المتداولة"]
+    en: ["total current assets"]
+  total_current_liabilities:
+    statement: BALANCE_SHEET
+    ar: ["إجمالي الالتزامات المتداولة", "مجموع الخصوم المتداولة"]
+    en: ["total current liabilities"]
+  total_liabilities:
+    statement: BALANCE_SHEET
+    ar: ["إجمالي الالتزامات", "مجموع الخصوم"]
+    en: ["total liabilities"]
+  total_equity:
+    statement: BALANCE_SHEET
+    ar: ["إجمالي حقوق الملكية", "مجموع حقوق المساهمين", "حقوق الملكية"]
+    en: ["total equity", "shareholders equity", "total equity attributable to owners"]
+  shares_outstanding:
+    statement: NOTE
+    ar: ["عدد الأسهم", "الأسهم القائمة", "عدد الأسهم المصدرة"]
+    en: ["shares outstanding", "number of shares", "issued shares"]
+  cost_of_sales:
+    statement: INCOME_STATEMENT
+    ar: ["تكلفة المبيعات", "تكلفة النشاط", "تكلفة الإيرادات"]
+    en: ["cost of sales", "cost of revenue", "cost of goods sold"]
+  gross_profit:
+    statement: INCOME_STATEMENT
+    ar: ["مجمل الربح", "إجمالي الربح", "الربح الإجمالي"]
+    en: ["gross profit"]
+  operating_profit:
+    statement: INCOME_STATEMENT
+    ar: ["ربح التشغيل", "صافي الربح التشغيلي", "الربح من العمليات"]
+    en: ["operating profit", "operating income", "profit from operations"]
+  finance_cost:
+    statement: INCOME_STATEMENT
+    ar: ["تكاليف التمويل", "أعباء التمويل", "فوائد مدينة", "مصروفات تمويلية"]
+    en: ["finance cost", "finance costs", "interest expense"]
+  fx_gain_loss:
+    statement: INCOME_STATEMENT
+    ar: ["فروق العملة", "أرباح وخسائر فروق العملة", "فروق تقييم عملات أجنبية"]
+    en: ["foreign exchange gain", "fx gain/loss", "exchange differences"]
+  other_income:
+    # Interest is frequently buried here (§3.3). Material (>2% rev) with
+    # unparseable note -> DATA_INSUFFICIENT.
+    statement: INCOME_STATEMENT
+    note_level: true
+    ar: ["إيرادات أخرى", "إيرادات متنوعة", "دخل آخر"]
+    en: ["other income", "other operating income", "miscellaneous income"]
+  share_of_associates:
+    statement: INCOME_STATEMENT
+    ar: ["حصة في نتائج شركات شقيقة", "نصيب الشركة في أرباح شركات زميلة"]
+    en: ["share of associates", "share of profit of associates"]
+  profit_before_tax:
+    statement: INCOME_STATEMENT
+    ar: ["الربح قبل الضرائب", "صافي الربح قبل الضرائب"]
+    en: ["profit before tax", "pre-tax profit", "profit before income tax"]
+  income_tax:
+    statement: INCOME_STATEMENT
+    ar: ["ضريبة الدخل", "مصروف ضريبة الدخل", "الضرائب"]
+    en: ["income tax", "income tax expense", "tax"]
+  eps_basic:
+    statement: INCOME_STATEMENT
+    ar: ["نصيب السهم في الأرباح", "ربحية السهم الأساسية", "العائد الأساسي للسهم"]
+    en: ["basic earnings per share", "basic eps", "earnings per share"]
+  operating_cash_flow:
+    statement: CASH_FLOW
+    ar: ["صافي التدفقات النقدية من أنشطة التشغيل", "التدفقات النقدية من الأنشطة التشغيلية"]
+    en: ["net cash from operating activities", "cash flow from operations"]
+  capex:
+    statement: CASH_FLOW
+    ar: ["مدفوعات لشراء أصول ثابتة", "شراء أصول ثابتة", "الاستثمار في أصول ثابتة"]
+    en: ["purchase of property plant and equipment", "capital expenditure", "additions to fixed assets"]
+  dividends_paid:
+    statement: CASH_FLOW
+    ar: ["توزيعات أرباح مدفوعة", "توزيعات مدفوعة للمساهمين"]
+    en: ["dividends paid", "dividends distributed"]
+  closing_cash:
+    statement: CASH_FLOW
+    ar: ["النقدية وما في حكمها آخر الفترة", "رصيد النقدية في نهاية الفترة"]
+    en: ["cash and cash equivalents at end of period", "closing cash balance"]
+  lease_liabilities_finance:
+    statement: BALANCE_SHEET
+    ar: ["التزامات عقود إيجار تمويلي", "التزامات التأجير التمويلي"]
+    en: ["finance lease liabilities", "lease liabilities"]
+  related_party_revenue:
+    statement: NOTE
+    ar: ["معاملات مع أطراف ذوي علاقة", "إيرادات من أطراف ذات علاقة"]
+    en: ["related party transactions", "related party revenue"]
+  auditor_opinion_type:
+    statement: NOTE
+    ar: ["رأي مراقب الحسابات", "تقرير مراقب الحسابات"]
+    en: ["auditor opinion", "audit opinion", "independent auditors report"]
+  fx_net_exposure:
+    statement: NOTE
+    ar: ["صافي المركز بالعملة الأجنبية", "التعرض لمخاطر العملة"]
+    en: ["net foreign currency exposure", "currency risk exposure"]
+
+  # Islamic financing (kept OUT of Screen C numerator; §3.2)
+  islamic_financing:
+    statement: BALANCE_SHEET
+    ar: ["مرابحة", "إجارة", "مشاركة", "مضاربة", "صكوك", "تمويل إسلامي", "استصناع", "سلم"]
+    en: ["murabaha", "ijara", "musharaka", "mudaraba", "sukuk", "islamic financing"]

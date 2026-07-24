@@ -1,0 +1,75 @@
+# =====================================================================
+# config/prohibited_activities.yaml
+# ---------------------------------------------------------------------
+# Screen A (ENGINE_SPEC §2.1). Two mechanisms:
+#
+#   1. prohibited_sectors — HARD exclusion list. If a company's primary
+#      sector classification is itself prohibited, the gate fails
+#      IMMEDIATELY (breach TYPE_1_ACTIVITY) regardless of any ratio.
+#      Checked BEFORE any ratio computation. The 5% tolerance applies
+#      only to incidental revenue in an otherwise permissible business.
+#
+#   2. non_permissible_segments — segment-revenue matchers. Segment
+#      revenue matching these is summed into `non_permissible_revenue`
+#      for the Screen A ratio (threshold 0.05).
+# =====================================================================
+
+version: "1.0.0"
+
+# Core-activity override (hard fail). Match against companies.sector /
+# sub_sector (case-insensitive substring, normalised).
+prohibited_sectors:
+  - "conventional bank"
+  - "conventional banking"
+  - "conventional insurance"
+  - "alcohol"
+  - "brewing"
+  - "distilling"
+  - "tobacco"
+  - "pork"
+  - "gambling"
+  - "casino"
+  - "adult content"
+  - "conventional weapons"
+  - "defense"
+  - "interest-based leasing"
+  - "conventional consumer finance"
+  - "microfinance"
+  - "factoring"
+  - "conventional asset management"
+
+# Incidental non-permissible segment revenue (summed for the 5% ratio).
+non_permissible_segments:
+  conventional_banking:
+    ar: ["الخدمات المصرفية التقليدية", "فوائد القروض"]
+    en: ["conventional banking", "interest-based lending"]
+  conventional_insurance:
+    ar: ["تأمين تقليدي"]
+    en: ["conventional insurance"]
+  alcohol:
+    ar: ["كحول", "مشروبات كحولية"]
+    en: ["alcohol", "alcoholic beverages", "beer", "wine", "spirits"]
+  tobacco:
+    ar: ["تبغ", "سجائر", "دخان"]
+    en: ["tobacco", "cigarettes"]
+  pork:
+    ar: ["لحم خنزير"]
+    en: ["pork"]
+  gambling:
+    ar: ["قمار", "مراهنات"]
+    en: ["gambling", "betting", "casino", "lottery"]
+  adult_content:
+    ar: ["محتوى للبالغين"]
+    en: ["adult content", "adult entertainment"]
+  conventional_weapons:
+    ar: ["أسلحة تقليدية"]
+    en: ["conventional weapons", "arms", "munitions"]
+  non_compliant_entertainment:
+    ar: ["ترفيه غير متوافق"]
+    en: ["non-compliant entertainment", "nightclub"]
+  interest_based_finance:
+    ar: ["تمويل بفائدة", "تأجير تمويلي تقليدي", "تخصيم", "تمويل استهلاكي تقليدي", "تمويل متناهي الصغر"]
+    en: ["interest-based leasing", "factoring", "consumer finance", "microfinance"]
+  conventional_asset_management:
+    ar: ["إدارة أصول تقليدية"]
+    en: ["conventional asset management"]

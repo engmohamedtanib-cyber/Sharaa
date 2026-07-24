@@ -1,0 +1,33 @@
+# =====================================================================
+# config/sources.yaml
+# ---------------------------------------------------------------------
+# Per-company filing source registry (BUILD_SPEC 2a). Where each
+# company's filings are actually found. Some issuers publish only to
+# EGX disclosures; some only to their own IR page (schema: filing_sources).
+#
+# Built once, maintained. This file is a TEMPLATE — populate during
+# Phase 2 universe discovery. Kept in config so discovery is auditable
+# and reproducible.
+# =====================================================================
+
+version: "0.1.0"
+
+# Exchange-wide disclosure feed (checked for every company).
+exchange:
+  egx_disclosures:
+    source_type: EGX_DISCLOSURE
+    url_pattern: "https://www.egx.com.eg/en/disclosures.aspx"
+    discovery_method: HTML_SCRAPE
+    selector: null
+    priority: 1
+
+# Per-company overrides / IR pages. Keyed by EGX code.
+# Example shape (fill in during Phase 2):
+#
+# COMI:
+#   - source_type: COMPANY_IR
+#     url_pattern: "https://www.example-ir.com/financial-reports"
+#     discovery_method: DIRECTORY_LISTING
+#     selector: "a[href$='.pdf']"
+#     priority: 2
+companies: {}
