@@ -120,12 +120,13 @@ memory/               ← dynamic state, updated every session
   KNOWN_ISSUES.md       open defects and their status
   FUTURE_PROPOSALS.md   ideas deferred past V1 (do not implement these)
   portfolio/            the live portfolio, as append-only JSONL
+  sources/              archived source documents, cited by hash from config/
 decisions/            ← why we did things this way (ADRs). Append-only.
 knowledge/            ← distilled operational rules (see §0 for when to read)
 examples/             ← recipes for recurring tasks
 docs/                 ← full specifications (heavy; load on demand)
 src/                  ← the deterministic engine + ingestion + reporting
-tests/                ← 569 tests. If these are green, the rules are intact.
+tests/                ← 671 tests. If these are green, the rules are intact.
 config/               ← every threshold, versioned. Never hardcode a number.
 ```
 
@@ -135,8 +136,10 @@ config/               ← every threshold, versioned. Never hardcode a number.
 
 The deterministic core is complete and tested: Shariah screening, 100-point scoring,
 decisions, watchlists, portfolio construction, purification, validation V1–V10, ingestion
-normalisation/extraction contracts, reporting, and an event-sourced portfolio ledger.
-**Not yet live:** real filing data, market prices, macro data.
+normalisation/extraction contracts, reporting, and an event-sourced portfolio ledger. The
+investable universe is populated — 33 EGX33-Shariah issuers across 34 listings, transcribed
+from an archived source, with sectors deliberately left null.
+**Not yet live:** real filing data, market prices, macro data, sector classification.
 
 Full detail: `memory/CURRENT_STATE.md`. Do not duplicate it here.
 

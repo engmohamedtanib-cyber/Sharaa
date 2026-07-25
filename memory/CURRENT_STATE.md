@@ -1,6 +1,6 @@
 # CURRENT_STATE.md
 
-**Updated:** 2026-07-25 · **Suite:** 590 tests green · ruff clean · mypy --strict on 4 layers
+**Updated:** 2026-07-25 · **Suite:** 671 tests green · ruff clean · mypy --strict on 5 layers
 
 Rewrite this file at the end of every working session. It is the first thing a future
 session reads. Keep it short and true.
@@ -19,15 +19,34 @@ session reads. Keep it short and true.
 | `engine/purification.py` | Tathir ratio, carry-forward on loss periods | High |
 | `engine/valuation.py` | ERP, justified P/E, peer-relative, lower-of | High |
 | `engine/ledger.py` | Event-sourced portfolio state; cash is a fold | High — 100% branch |
+| `engine/universe.py` | EGX33 constituents, issuer grouping, refuses an unpopulated universe | High — 100% branch |
 | `validation/` | V1–V10 + status derivation + type-level gate | High |
 | `ingestion/normalise.py` | Arabic digits, separators, signs, unit scale | High |
 | `ingestion/periods.py` | Cumulative→standalone quarters | High |
 | `ingestion/extract.py` | Dual-pass prompt contract + strict parsing | Contract only — never run on a real filing |
 | `ingestion/acquire.py` | Hash, dedupe, scanned detection | Logic only — never downloaded anything |
 | `ingestion/reconcile.py` | Dual-pass agreement, §3.2/§3.3 gates | High |
+| `research/transcribe_universe.py` | Constituents export → `config/universe.yaml` | High — round-trips against the archived workbook |
 | `reporting/journal.py` | Decision journal, falsifiability enforced | High |
 | `reporting/order_sheet.py` | Limit-only orders (market unrepresentable) | High |
 | `store/jsonl_ledger.py` | Git-native append-only ledger persistence | High |
+
+## The universe is now populated (M0 done)
+
+`config/universe.yaml` — **34 listings, 33 issuers**, transcribed by script from
+`memory/sources/EGX33-SHARIAH_constituents_2026-05.xlsx`
+(sha256 `1ad43de…4470c`, weights as of 2026-04-30). Do not hand-edit it; re-run
+`research/transcribe_universe.py` at the next rebalance. Full rationale: `decisions/0005`.
+
+Three things about it a future session must not undo:
+
+- **34 listings ≠ 34 companies.** Faisal Islamic Bank is listed in EGP (`FAIT`) and USD
+  (`FAITA`). Position and concentration caps apply per `issuer_id`, never per row.
+- **Every `sector` is `null`,** because the source export has no sector column. Sector
+  drives the sector concentration cap, so a guessed one would silently shape position
+  sizing. It stays null until a primary source is opened.
+- **Provenance stops at the bytes.** The origin URL was not independently verified (egress
+  is blocked here) and `retrieved.from` says so. Upgrade it only against a real fetch.
 
 ## What is NOT built
 
@@ -35,8 +54,8 @@ session reads. Keep it short and true.
   above has been exercised on fixtures only.
 - **No golden set.** Zero real filings have been processed. Extraction accuracy is
   therefore **unknown**, not "good". Do not trust extraction until the golden set exists.
-- **No universe.** `config/universe.yaml` exists with `constituents: []` deliberately
-  empty. It must be transcribed from a primary source, never from recall.
+- **No sector classification.** See above — blocks the sector cap in `engine/portfolio.py`
+  from being meaningful, though it does not block screening or scoring.
 - **No investment policy (IPS) module.** Schema is drafted; `engine/policy.py` not written.
 - **No tool API / MCP layer.** The conversational surface is not built yet.
 - **No routines.** Nothing runs on a schedule. Everything is user-initiated.
@@ -47,10 +66,8 @@ session reads. Keep it short and true.
   egress proxy (policy denial). `WebFetch` returns 403 for *every* host including
   Wikipedia, so it is blocked environment-wide, not by EGX.
 - **`WebSearch` works** — links and metadata only, no document retrieval.
-- **File upload into the chat works.** This is the reliable path for filings.
-- Consequence: filings arrive by upload, or from a local runtime with normal network
-  access. Autonomous discovery is deferred, not designed out — the `Downloader` protocol
-  already isolates it.
+- **File upload into the chat works.** This is the reliable path for filings, and is how
+  the constituent list arrived.
 
 ## Known truths a future session must not re-litigate
 
@@ -62,6 +79,8 @@ session reads. Keep it short and true.
 - The universe is the **EGX 33 Shariah Index**, not the whole exchange (`decisions/0004`).
   The index selects the universe; our Screens A–E independently verify each holding and
   measure headroom, which the index never reports.
+- Index weights are stored but are **informational only** — never an engine input
+  (`decisions/0005`).
 - The project **is** worth continuing, in the re-scoped form. The conditions under which
   it would stop are written down in `decisions/0004` so they cannot be rationalised away
   later.
@@ -69,3 +88,11 @@ session reads. Keep it short and true.
 ## Portfolio
 
 No live portfolio yet. `memory/portfolio/ledger.jsonl` is created on first event.
+
+## Unresolved, raised with the user 2026-07-25
+
+The user pasted a 34-name EGX price list alongside the workbook. It is **not** the index:
+10 of its names are not constituents (El Sewedy, GB Auto, Ezz Steel, Raya Holding, Abu Qir,
+Emaar Misr, Cleopatra, Misr Fertilizers, Fawry, Taaleem) and 10 constituents are absent
+from it. Nothing from it was stored — it has no verifiable source and there is no
+market-data layer yet (M5). Awaiting the user's word on where it came from.

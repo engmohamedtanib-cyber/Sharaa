@@ -14,6 +14,7 @@ from typing import Any
 import yaml
 
 from engine.config import Thresholds
+from engine.universe import Universe, parse_universe
 
 # Repo root = parent of src/.
 _ROOT = Path(__file__).resolve().parent.parent
@@ -51,3 +52,16 @@ def load_prohibited_activities(path: str | None = None) -> dict[str, Any]:
 def load_sources(path: str | None = None) -> dict[str, Any]:
     p = Path(path) if path else CONFIG_DIR / "sources.yaml"
     return _read_yaml(p)
+
+
+@lru_cache(maxsize=1)
+def load_universe(path: str | None = None) -> Universe:
+    """Load ``config/universe.yaml`` into a :class:`Universe`.
+
+    Raises :class:`~engine.universe.UniverseUnavailableError` if the constituent
+    list has not been transcribed from a primary source. That exception is the
+    point of this function: callers must not be able to obtain an empty universe
+    and mistake it for a screening run that found nothing.
+    """
+    p = Path(path) if path else CONFIG_DIR / "universe.yaml"
+    return parse_universe(_read_yaml(p))

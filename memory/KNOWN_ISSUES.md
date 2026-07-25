@@ -23,10 +23,22 @@ Nothing polls, nothing schedules, nothing alerts. Proactive monitoring is a desi
 intention, not a running capability. See `decisions/0001` for what is and is not possible
 on a subscription runtime.
 
-### 4. `research/` is an empty package
-EGX discovery, market data and CBE macro are unimplemented. Every market-dependent
+### 4. `research/` holds only the universe transcriber
+EGX filing discovery, market data and CBE macro are unimplemented. Every market-dependent
 sub-criterion (6A–6D, 4A, 4D) will score `MISSING_DATA` until they exist — which is
 correct behaviour, but means scores are currently structurally understated.
+
+### 5. Every constituent's `sector` is `null`
+The EGX constituents export carries no sector column, and `decisions/0005` refuses to fill
+it from recall. Consequence: the **sector concentration cap in `engine/portfolio.py` has
+nothing to bite on** — it will not reject a portfolio that is in fact concentrated in one
+sector. Screening and scoring are unaffected. Blocked on a primary source for sector.
+
+### 6. Universe provenance stops one link short
+`config/universe.yaml` attests to the exact bytes it was transcribed from (sha256, archived
+in-repo) but **not** to the URL those bytes came from — egress is blocked here, so the
+upload's chain of custody before it reached the session is unverified. Recorded honestly in
+`retrieved.from`. Upgrade only against a real fetch whose hash matches, never by assertion.
 
 ---
 
