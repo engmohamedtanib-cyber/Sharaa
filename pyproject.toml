@@ -98,7 +98,7 @@ mypy_path = "src"
 [[tool.mypy.overrides]]
 # CLAUDE.md §5 requires strict on engine/ and validation/. ingestion/ and
 # reporting/ meet it too, so they are held to it to prevent regression.
-module = ["engine.*", "validation.*", "ingestion.*", "reporting.*"]
+module = ["engine.*", "validation.*", "ingestion.*", "reporting.*", "store.*"]
 strict = true
 
 [[tool.mypy.overrides]]

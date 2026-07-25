@@ -36,6 +36,7 @@ from engine.types import (
 from ingestion.normalise import NormalisationError, detect_scale, parse_number
 from reporting.journal import entry_from_decision, render_journal
 from reporting.order_sheet import build_order, render_order_sheet
+from store.jsonl_ledger import JsonlLedgerStore
 
 
 def _sample_inputs() -> ScoringInputs:
@@ -239,6 +240,33 @@ def cmd_review(args: argparse.Namespace) -> int:
     return 0 if args.dry_run else 2
 
 
+
+LEDGER_PATH = "memory/portfolio/ledger.jsonl"
+
+
+def cmd_portfolio(args: argparse.Namespace) -> int:
+    """Show portfolio state derived from the git-native ledger (decisions/0002)."""
+    store = JsonlLedgerStore(LEDGER_PATH)
+    events = store.read_all()
+    state = store.state()
+
+    print(f"ledger             : {LEDGER_PATH} ({len(events)} events)")
+    print(f"cash               : {state.cash} EGP")
+    print(f"contributed        : {state.total_contributed} EGP")
+    print(f"dividends received : {state.dividends_received} EGP")
+    print(f"realised P&L       : {state.realised_pnl} EGP")
+    print(f"purification due   : {state.purification_due} EGP")
+
+    holdings = state.open_holdings
+    if not holdings:
+        print("\nholdings           : none")
+        return 0
+    print("\nholdings")
+    for ticker, h in sorted(holdings.items()):
+        print(f"  {ticker:<10}{h.shares:>10} shares   avg cost {h.avg_cost}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="egx", description="EGX Shariah Engine")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -251,6 +279,7 @@ def build_parser() -> argparse.ArgumentParser:
     add("config", cmd_config, "show threshold config and verify pillar maxima")
     add("normalise", cmd_normalise, "demonstrate value normalisation and unit-scale detection")
     add("demo", cmd_demo, "run the deterministic gate/score/decision on a sample company")
+    add("portfolio", cmd_portfolio, "show portfolio state derived from the ledger")
     add("exceptions", cmd_exceptions, "list the DATA_INSUFFICIENT / CONFLICT exception queue")
     add("review", cmd_review, "run a full quarterly review (needs ingestion + credentials)")
     return parser

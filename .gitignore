@@ -35,6 +35,12 @@ data/filings/
 *.pdf
 !tests/golden/**/*.pdf
 
+# Personal financial data (decisions/0002): the LEDGER IS COMMITTED on purpose —
+# it is the project's memory and git history is its audit trail. Only large
+# binaries are excluded; their SHA-256 is recorded in the JSON that references
+# them, so provenance survives even though the bytes do not.
+memory/filings/**/*.pdf
+
 # OS / editor
 .DS_Store
 .idea/

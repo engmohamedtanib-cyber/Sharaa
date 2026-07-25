@@ -86,7 +86,14 @@ composites, not raw rows.
 
 ---
 
-## M4 — Supabase wiring
+## ~~M4 — Supabase wiring~~ — REMOVED from V1
+
+Superseded by `decisions/0002`: storage is git-native JSONL. The SQL schemas are
+retained as the normative constraint description and the migration target if
+`memory/FUTURE_PROPOSALS.md` P2 is ever revisited. Milestones renumber accordingly;
+no credentials are needed for any remaining V1 work.
+
+<details><summary>Original M4 (kept for the record)</summary>
 
 **Build:** apply schema, implement `SupabaseRepository` against the existing `Repository`
 Protocol, storage bucket, `.env`, migration discipline.
@@ -102,6 +109,8 @@ contained change once the Protocol has been exercised by real callers.
 
 **Risks:** silent divergence between backends. Mitigation: run the repository test suite
 against both.
+
+</details>
 
 ---
 
@@ -189,14 +198,17 @@ Dependency-first, credential-last, and *trust-building last*:
 
 ## Current status
 
-- **M1: ✅ complete.** `engine/ledger.py` (100% branch coverage, 75 tests),
-  `db/schema_v2_ledger.sql` (ledger, order lifecycle, IPS, agent audit, routine runs),
-  repository ledger methods. All M1 success criteria met:
-  cash is a fold · unpayable buys and unheld sales refused · splits/bonus preserve
-  cost basis · illegal order transitions rejected in both Python and SQL ·
-  replay is byte-identical.
-- **M2: next** (Investment Policy Statement — schema already laid in migration 002).
-- M3–M8: queued.
-- Blocked on user: M6 (real filing PDFs), M4 (Supabase credentials).
+- **M1: ✅ complete.** `engine/ledger.py` (100% branch, 75 tests) +
+  `store/jsonl_ledger.py` (100% branch, 21 tests) + `db/schema_v2_ledger.sql`.
+  Cash is a fold · unpayable buys and unheld sales refused · splits/bonus preserve
+  cost basis · illegal order transitions rejected · replay byte-identical ·
+  ledger persists to git as diffable JSONL with exact decimals.
+- **M1.5: ✅ complete.** Knowledge architecture: `BRAIN.md` (loading router),
+  `memory/` (5 state files), `decisions/` (3 ADRs), `examples/` (2 recipes).
+  A future session resumes from `BRAIN.md` + `memory/` alone.
+- **M2: next** — Investment Policy Statement. See `memory/NEXT_TASK.md`.
+- M3, M5–M8: queued. M4 removed (see above).
+- Blocked on user: real filing PDFs only. **No credentials needed for anything else.**
 
-Suite: 569 tests, ruff clean, `mypy --strict` across engine/validation/ingestion/reporting.
+Suite: 590 tests, ruff clean, `mypy --strict` across engine/validation/ingestion/
+reporting/store (31 files).
