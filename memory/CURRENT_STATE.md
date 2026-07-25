@@ -35,9 +35,22 @@ session reads. Keep it short and true.
   above has been exercised on fixtures only.
 - **No golden set.** Zero real filings have been processed. Extraction accuracy is
   therefore **unknown**, not "good". Do not trust extraction until the golden set exists.
+- **No universe.** `config/universe.yaml` exists with `constituents: []` deliberately
+  empty. It must be transcribed from a primary source, never from recall.
 - **No investment policy (IPS) module.** Schema is drafted; `engine/policy.py` not written.
 - **No tool API / MCP layer.** The conversational surface is not built yet.
 - **No routines.** Nothing runs on a schedule. Everything is user-initiated.
+
+## Environment limits (tested 2026-07-25, not assumed)
+
+- **Cannot download filings from this sandbox.** `curl` to egx.com.eg returns 403 from the
+  egress proxy (policy denial). `WebFetch` returns 403 for *every* host including
+  Wikipedia, so it is blocked environment-wide, not by EGX.
+- **`WebSearch` works** — links and metadata only, no document retrieval.
+- **File upload into the chat works.** This is the reliable path for filings.
+- Consequence: filings arrive by upload, or from a local runtime with normal network
+  access. Autonomous discovery is deferred, not designed out — the `Downloader` protocol
+  already isolates it.
 
 ## Known truths a future session must not re-litigate
 
@@ -46,6 +59,12 @@ session reads. Keep it short and true.
 - Storage is **git-native JSONL**, not Supabase, for V1 (`decisions/0002`).
 - The portfolio ledger is **event-sourced**; there is no `cash` field anywhere by design
   (`decisions/0003`).
+- The universe is the **EGX 33 Shariah Index**, not the whole exchange (`decisions/0004`).
+  The index selects the universe; our Screens A–E independently verify each holding and
+  measure headroom, which the index never reports.
+- The project **is** worth continuing, in the re-scoped form. The conditions under which
+  it would stop are written down in `decisions/0004` so they cannot be rationalised away
+  later.
 
 ## Portfolio
 

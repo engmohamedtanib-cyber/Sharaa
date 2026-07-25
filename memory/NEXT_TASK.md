@@ -4,44 +4,48 @@ One task. Not a backlog. When it is done, replace this file with the next one.
 
 ---
 
-## Now: M2 — Investment Policy Statement
+## Now: M0 — populate the investable universe
 
-Build `engine/policy.py` and wire it in.
+`config/universe.yaml` exists but `constituents: []` is **empty on purpose**.
 
-**Why this is next:** every decision must record the mandate it was made under. Retrofitting
-policy after the conversational layer exists is far more expensive than building it first.
+**Task:** transcribe the EGX 33 Shariah Index constituent list from a primary source into
+`config/universe.yaml`, then set the `retrieved` block (date, URL, who).
 
-**What to build**
-1. `config/ips_schema.yaml` — shape + safe defaults for a policy.
-2. `engine/policy.py` — typed, immutable `Policy` with:
-   - versioning (`policy_version`, `effective_from`, `adopted_reason`)
-   - objective, horizon, contributions, liquidity reserve
-   - personal exclusions (sectors, tickers)
-   - purification basis and cadence
-   - `is_excluded(ticker, sector) -> bool`
-   - `investable_cash(state) -> Decimal` (total cash minus liquidity reserve)
-3. **The rule that matters:** policy may only *add* exclusions. A policy that tries to
-   admit a company failing the Shariah gate must be **rejected at load** (R7).
-4. `store/` persistence for policy versions (append-only JSONL, same pattern as ledger).
-5. Tests: 100% branch coverage; explicit test that a gate-loosening policy is refused.
+**The rule that governs this task:** never fill this list from memory or recall. Every
+ticker must be read off a source that is open in front of you. Putting a company into a
+halal universe on no evidence is the exact failure this project exists to prevent
+(`CLAUDE.md` Prime Directive, R3). If you cannot open a source, leave it empty and say so.
+
+**How to get it, in order of preference**
+1. The user pastes or uploads the list (screenshot, CSV, or copied text).
+2. A session with working network access fetches
+   `https://www.egx.com.eg/en/currentindexconstituntes.aspx?type=22&nav=22`.
+   ⚠️ In the current sandbox this returns **403** — see `decisions/0004`.
+3. Mubasher or Investing.com constituent pages (also 403 here).
 
 **Definition of done**
-- `uv run pytest` green
-- `uv run ruff check .` clean
-- `uv run mypy src/engine src/validation src/ingestion src/reporting` clean
-- `memory/CURRENT_STATE.md` updated, committed and pushed
-
-**Do not** start M3 (tool API) in the same session. One milestone per session keeps the
-memory files honest.
+- 33 tickers with names (AR/EN where available) and sector
+- `retrieved.at` and `retrieved.from` filled in
+- `status` changed from `AWAITING_CONSTITUENTS` to `POPULATED`
+- A loader + test proving the engine refuses to run against an empty universe rather than
+  treating it as "no compliant companies"
 
 ---
 
-## After this (do not start yet)
+## Then: M2 — Investment Policy Statement
 
-M3 tool API → M4 live data adapters → M5 golden set (needs real PDFs from the user)
-→ M6 routines → M7 CIO persona. See `docs/ROADMAP_V1.md`.
+Build `engine/policy.py` + `config/ips_schema.yaml`. Versioned, append-only, and it may
+only **add** exclusions — a policy that would admit a gate-failing company is rejected at
+load (R7). Full brief in `docs/ROADMAP_V1.md` M2.
+
+M2 needs nothing external and can proceed in parallel if M0 is blocked on the user.
+
+---
 
 ## Blocked on the user
 
-- **Real EGX filing PDFs** (3–5 to start) — gates all extraction trust.
-- Nothing else. No credentials are needed for M2–M4.
+- **The EGX33 Shariah constituent list** (M0) — a screenshot or copy-paste is enough.
+- **1–3 real filing PDFs** for companies in that list (M5 golden set). Prefer the most
+  recent annual report of a company they might actually hold.
+
+Nothing else is blocked. No credentials are needed anywhere in V1.

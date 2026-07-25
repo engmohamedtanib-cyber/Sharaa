@@ -1,0 +1,61 @@
+# =====================================================================
+# config/universe.yaml
+# ---------------------------------------------------------------------
+# The investable universe (decisions/0004).
+#
+# PRIMARY UNIVERSE: the EGX 33 Shariah Index constituents.
+#
+# The index is maintained by the Egyptian Exchange with an independent
+# Shariah Supervisory Board. Constituents are drawn from EGX100, must
+# have a Shariah supervisory board, and must meet the board's activity,
+# financial-ratio and liquidity criteria. Single-stock weight is capped
+# at 15%. Launched June 2024; base date 2022-01-01.
+#
+# OUR ENGINE DOES NOT DEFER TO THE INDEX. Membership selects the
+# universe; our Screens A-E then independently verify each holding and
+# measure HEADROOM, which the index never reports. Index membership is a
+# periodic, lagging signal - a company can breach between rebalances,
+# and Screen B's early warning (interest income crossing 3% of revenue)
+# is designed to catch exactly that drift.
+# =====================================================================
+
+version: "0.1.0"
+status: "AWAITING_CONSTITUENTS"
+
+index:
+  name: "EGX 33 Shariah Index"
+  code: "EGX33-SHARIAH"
+  operator: "The Egyptian Exchange"
+  launched: "2024-06"
+  base_date: "2022-01-01"
+  constituent_count: 33
+  max_single_weight: 0.15
+  sources:
+    - "https://www.egx.com.eg/en/currentindexconstituntes.aspx?type=22&nav=22"
+    - "https://english.mubasher.info/markets/EGX/indices/SHARIAH"
+    - "https://www.investing.com/indices/egx-33-shariah-compliant-index-components"
+
+# ---------------------------------------------------------------------
+# CONSTITUENTS - deliberately EMPTY.
+#
+# This list must be transcribed from a primary source. It must NEVER be
+# filled in from recall. Inventing a ticker here would place a company in
+# a halal universe on no evidence - precisely the failure mode this
+# entire project exists to make structurally difficult (CLAUDE.md, the
+# Prime Directive and R3).
+#
+# To populate: open a source above, transcribe each row, and record the
+# retrieval date and URL in `retrieved`. Until then every downstream
+# consumer must treat the universe as unavailable, not as empty.
+# ---------------------------------------------------------------------
+retrieved:
+  at: null
+  from: null
+  by: null
+
+constituents: []
+
+# Companies the user holds or watches that are NOT index constituents.
+# These require the full Screen A-E gate before anything else, with no
+# index membership to lean on.
+off_index_watch: []
