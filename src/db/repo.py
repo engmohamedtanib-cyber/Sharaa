@@ -26,6 +26,7 @@ from db.models import (
     ShariahStatusHistory,
     WatchlistEntry,
 )
+from engine.ledger import LedgerEvent, PortfolioState, fold
 from engine.types import DataStatus
 
 
@@ -59,6 +60,11 @@ class Repository(Protocol):
     def append_watchlist(self, entry: WatchlistEntry) -> None: ...
     def append_purification(self, row: PurificationRow) -> None: ...
 
+    # portfolio ledger (append-only; state is a fold, never a stored balance)
+    def append_ledger_event(self, event: LedgerEvent) -> LedgerEvent: ...
+    def ledger_events(self) -> list[LedgerEvent]: ...
+    def portfolio_state(self) -> PortfolioState: ...
+
     # queries
     def exception_queue(self) -> list[Filing]: ...
 
@@ -77,6 +83,7 @@ class InMemoryRepository:
         self._decisions: list[Decision] = []
         self._watchlist: list[WatchlistEntry] = []
         self._purification: list[PurificationRow] = []
+        self._ledger: list[LedgerEvent] = []
 
     # ---- reference ----
     def upsert_company(self, company: Company) -> None:
@@ -148,6 +155,30 @@ class InMemoryRepository:
 
     def append_purification(self, row: PurificationRow) -> None:
         self._purification.append(row)
+
+    # ---- portfolio ledger ----
+    def append_ledger_event(self, event: LedgerEvent) -> LedgerEvent:
+        """Append one event, assigning the next sequence number.
+
+        The caller does not choose ``seq``: the store owns fold order, exactly
+        as ``ledger_events.seq`` (BIGSERIAL) does in Postgres. Applying the
+        event before storing it means an impossible movement — an unpayable buy,
+        a sale of unheld shares — is rejected here rather than corrupting the
+        log (ARCHITECTURE_V2 §6).
+        """
+        from dataclasses import replace as _replace
+
+        numbered = _replace(event, seq=len(self._ledger) + 1)
+        fold([numbered], initial=self.portfolio_state())  # raises if impossible
+        self._ledger.append(numbered)
+        return numbered
+
+    def ledger_events(self) -> list[LedgerEvent]:
+        return list(self._ledger)
+
+    def portfolio_state(self) -> PortfolioState:
+        """Derive current state. Never cached — the fold IS the balance."""
+        return fold(self._ledger)
 
     # ---- queries ----
     def exception_queue(self) -> list[Filing]:

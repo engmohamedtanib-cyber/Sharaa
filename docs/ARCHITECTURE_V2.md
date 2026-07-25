@@ -416,7 +416,108 @@ amnesia is a toy; a stateful agent with a dry voice is already a CIO.
 
 ---
 
-## 12. Verdict in one paragraph
+## 12. Final review amendments (added at architecture freeze)
+
+The pre-implementation gate review found the design complete against every stated
+criterion except two. Both are added here; nothing else changed.
+
+### 12.1 MISSING LAYER — the Investment Policy Statement (IPS)
+
+A real CIO does not operate on taste. It operates under a **mandate**, and every
+decision is judged against the mandate *in force at the time it was made*. The
+architecture had the user's preferences existing only as Day-1 conversation, which means
+they would live in a context window — exactly the failure `CLAUDE.md` R5 forbids for
+anything that shapes a decision.
+
+**The IPS is a first-class, versioned, append-only object**, governed like
+`config/thresholds.yaml` (R4) and referenced like `threshold_version` (R5):
+
+```yaml
+policy_version: "1.0.0"          # bumped on any change; never edited in place
+effective_from: "2026-07-25"
+objective: LONG_TERM_GROWTH       # LONG_TERM_GROWTH | INCOME | CAPITAL_PRESERVATION
+horizon_years: 10
+base_currency: EGP
+contributions:
+  amount: 5000
+  cadence: MONTHLY                # MONTHLY | IRREGULAR | NONE
+liquidity_needs:
+  reserve_egp: 0                  # money that must never be invested
+  expected_withdrawal: null
+risk:
+  max_drawdown_tolerance: 0.30    # informational; triggers a conversation, not a trade
+  concentration_comfort: STANDARD # maps to which portfolio caps apply
+exclusions:                       # PERSONAL exclusions, layered ON TOP of the Shariah gate
+  sectors: []
+  tickers: []
+purification:
+  basis: DIVIDENDS
+  settlement_cadence: ANNUAL
+review:
+  cadence: QUARTERLY
+  digest: WEEKLY
+```
+
+Rules, binding:
+- **The IPS never loosens the Shariah gate.** It may only add exclusions. An IPS that
+  attempted to admit a gate-failing company is rejected at load (R7).
+- **Every `decisions` row stores `policy_version` alongside `threshold_version`.**
+  Two years later you must be able to say "we bought this under the policy you had then."
+- **The agent may propose an IPS change; only the user adopts it**, and adoption writes
+  a new version with the user's stated reason. Policy drift is thereby visible.
+- The IPS lives in the database (not a YAML file) because the user edits it by talking,
+  not by committing — but it obeys the same versioning discipline. `config/ips_schema.yaml`
+  holds the *shape* and defaults; the *instance* is a ledger-adjacent table.
+
+### 12.2 MISSING BEHAVIOUR — corporate actions in the ledger
+
+EGX issuers do bonus issues and splits routinely. A ledger that models only buys, sells
+and cash will silently hold a wrong share count after the first bonus issue, and every
+weight, every 6B liquidity check and every performance figure downstream inherits the
+error. Because the ledger is a fold, the corruption is permanent and invisible.
+
+The ledger event vocabulary therefore includes `SHARE_SPLIT` and `BONUS_ISSUE`
+(share count scales by ratio, total cost basis unchanged, so average cost re-derives
+correctly), and `RIGHTS_ISSUE` is deliberately **not** auto-handled — it requires a cash
+decision and is routed to the user as a normal proposal.
+
+### 12.3 CLARIFICATION — auditing the reasoning plane
+
+R5 makes the *data* auditable. For an LLM-fronted system that is not sufficient: you must
+also be able to prove, after the fact, that no number the agent said was invented. Every
+tool call made by the conversation or autonomy plane is logged to `audit_log` with its
+arguments, its result digest, and the run that made it. Consequence: any figure in any
+message traces to a tool result, and a figure that traces to nothing is a defect with a
+test that can catch it.
+
+### 12.4 CLARIFICATION — clock authority
+
+`engine/` stays pure and clock-free (`CLAUDE.md` §5). Every routine captures `now` **once**
+at its boundary, records it on the run, and passes it inward as data. Replaying a run with
+its recorded timestamp must reproduce its output exactly.
+
+---
+
+## 13. ARCHITECTURE FROZEN — Version 1
+
+**As of this amendment, the V1 architecture is frozen.** No further structural change will
+be made during V1 implementation.
+
+Frozen means:
+- The three planes (conversation / autonomy / truth) and their separation are fixed.
+- The tool-API-as-only-write-path is fixed.
+- The deterministic/LLM division in §4 is fixed.
+- The autonomy tiers in §8 are fixed.
+- The ledger, IPS, and audit obligations above are in scope for V1.
+
+New ideas discovered during implementation are written to `docs/FUTURE_PROPOSALS.md`
+and considered for V2. They do not modify this document. The only admissible reason to
+reopen V1 architecture is a discovery that makes a frozen element *impossible or unsafe*,
+not merely improvable.
+
+---
+
+## 14. Verdict in one paragraph
 
 The current architecture survives the review — not because it was the product, but
 because it was accidentally the correct *foundation* for one: a deterministic, auditable,
