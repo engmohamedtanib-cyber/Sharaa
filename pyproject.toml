@@ -74,6 +74,14 @@ ignore = []
 [tool.ruff.lint.per-file-ignores]
 # Tests: allow non-PEP8 fixture/local names and wide parametrize tables.
 "tests/**" = ["N802", "N806", "E501"]
+# The normalisation layer exists precisely to handle Arabic-Indic digits,
+# Arabic separators, full-width brackets and the Unicode minus sign. Ruff's
+# "ambiguous unicode" rules flag exactly the characters that are the subject
+# matter here, and CLAUDE.md §7 requires the Arabic forms be preserved.
+"src/ingestion/normalise.py" = ["RUF001", "RUF002", "RUF003"]
+"tests/test_ingestion_normalise.py" = ["RUF001", "RUF002", "RUF003"]
+# The CLI's `normalise` command demonstrates those same characters.
+"src/cli.py" = ["RUF001"]
 
 # ----------------------------------------------------------------------
 # Mypy — strict on the deterministic layers (CLAUDE.md §5)
@@ -88,7 +96,9 @@ explicit_package_bases = true
 mypy_path = "src"
 
 [[tool.mypy.overrides]]
-module = ["engine.*", "validation.*"]
+# CLAUDE.md §5 requires strict on engine/ and validation/. ingestion/ and
+# reporting/ meet it too, so they are held to it to prevent regression.
+module = ["engine.*", "validation.*", "ingestion.*", "reporting.*"]
 strict = true
 
 [[tool.mypy.overrides]]

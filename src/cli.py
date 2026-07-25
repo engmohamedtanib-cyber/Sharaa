@@ -33,6 +33,9 @@ from engine.types import (
     Timeliness,
     Valuation,
 )
+from ingestion.normalise import NormalisationError, detect_scale, parse_number
+from reporting.journal import entry_from_decision, render_journal
+from reporting.order_sheet import build_order, render_order_sheet
 
 
 def _sample_inputs() -> ScoringInputs:
@@ -151,11 +154,70 @@ def cmd_demo(args: argparse.Namespace) -> int:
     print(f"  reason           : {dec.reason}")
     print(f"  falsification    : {dec.falsification_condition}")
 
+    # Journal is written BEFORE the order sheet (BUILD_SPEC Phase 5).
+    entry = entry_from_decision(
+        review_code="DEMO",
+        egx_code="DEMO",
+        decision=dec.decision,
+        shariah_status=gate.overall_status,
+        breach=breach.breach,
+        trigger=dec.trigger,
+        reason=dec.reason,
+        falsification_condition=dec.falsification_condition,
+        score=result.total,
+        price_at_decision=inp.market.close_price,
+        valuation_gap_pct=Decimal("0.28"),
+        veto_fired=dec.veto_fired,
+        threshold_version=cfg.version,
+    )
+    order = build_order(
+        egx_code="DEMO",
+        decision=dec.decision,
+        trade_value=Decimal("10000"),
+        reference_price=inp.market.close_price or Decimal("1"),
+    )
+    print()
+    print(render_journal("DEMO", [entry]))
+    print(render_order_sheet([order] if order else []))
+
     if args.dry_run:
-        print("\n(dry-run: nothing persisted)")
+        print("(dry-run: nothing persisted; no order was placed — R6)")
     else:
         repo = get_repository()
-        print(f"\n(persisted to {type(repo).__name__}; exception queue: {len(repo.exception_queue())})")
+        print(f"(persisted to {type(repo).__name__}; exception queue: {len(repo.exception_queue())})")
+    return 0
+
+
+def cmd_normalise(args: argparse.Namespace) -> int:
+    """Demonstrate the normalisation layer on the known-hard cases (§5)."""
+    samples = [
+        ("1,234,567", "ASCII thousands"),
+        ("1.234.567", "dot thousands"),
+        ("1,234.56", "thousands + decimal"),
+        ("١٢٣٤٥", "Arabic-Indic digits"),
+        ("١٬٢٣٤", "Arabic thousands separator"),
+        ("(1,234)", "bracketed negative"),
+        ("1,234-", "trailing minus"),
+        ("0.005", "sub-unit ratio"),
+    ]
+    print("value normalisation (EXTRACTION_SPEC §5)\n")
+    for raw, label in samples:
+        print(f"  {raw:<14} {parse_number(raw):>14}   {label}")
+
+    print("\nunit scale detection (§5.2)\n")
+    for header in ["بالألف جنيه مصري", "بالمليون", "In thousands of Egyptian Pounds"]:
+        print(f"  {header:<34} -> {detect_scale(header).value}")
+
+    print("\nrefusals — never guessed (R3)\n")
+    for bad in ["1,23,45", "not a number"]:
+        try:
+            parse_number(bad)
+        except NormalisationError as exc:
+            print(f"  {bad:<14} -> {type(exc).__name__}")
+    try:
+        detect_scale("Consolidated Statement of Financial Position")
+    except NormalisationError as exc:
+        print(f"  {'(no scale header)':<14} -> {type(exc).__name__}")
     return 0
 
 
@@ -187,6 +249,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.set_defaults(func=func)
 
     add("config", cmd_config, "show threshold config and verify pillar maxima")
+    add("normalise", cmd_normalise, "demonstrate value normalisation and unit-scale detection")
     add("demo", cmd_demo, "run the deterministic gate/score/decision on a sample company")
     add("exceptions", cmd_exceptions, "list the DATA_INSUFFICIENT / CONFLICT exception queue")
     add("review", cmd_review, "run a full quarterly review (needs ingestion + credentials)")
