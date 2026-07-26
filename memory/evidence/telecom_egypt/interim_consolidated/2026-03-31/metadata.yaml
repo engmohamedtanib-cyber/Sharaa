@@ -1,0 +1,65 @@
+# Evidence record. Schema and admission rules: memory/evidence/README.md
+#
+# THE BYTES ARE NOT COMMITTED. `.gitignore` excludes *.pdf; this metadata is
+# committed so the provenance chain survives where the bytes cannot
+# (decisions/0002). `store.evidence.verify()` checks the digest whenever the
+# file is present locally, and the test suite skips records whose bytes are
+# absent rather than failing them.
+
+id: "telecom_egypt/interim_consolidated/2026-03-31"
+version: 1
+
+title: "Telecom Egypt — Condensed Consolidated Interim Financial Statements, three months ended 31 March 2026, and Limited Review Report"
+publisher: "Telecom Egypt Company (An Egyptian Joint Stock Company)"
+kind: INTERIM_FINANCIAL_STATEMENTS
+
+file: "consolidated.pdf"
+media_type: "application/pdf"
+bytes: 6344340
+sha256: "4f6b057e56100c6a9304e45143bea6e085458fa873a9145755208e81821e5d30"
+
+# The reporting period end, read off the cover page and every statement header.
+as_of: "2026-03-31"
+
+acquired:
+  at: "2026-07-26"
+  via: USER_UPLOAD
+  original_filename: "EAS_Consolidated_Statement33dc1e9fa5b44ac0a9c608be870f5ee7.pdf"
+  # Egress is blocked in this environment, re-tested 2026-07-26 with a
+  # Wikipedia control (decisions/0004). The user reports downloading it from
+  # the EGX financial-statements listing; this session did not fetch it and
+  # does not assert the URL.
+  url: null
+  url_verified: false
+
+used_by:
+  - "tests/golden/ETEL/2026-Q1/expected.yaml"
+
+supersedes: null
+superseded_by: null
+
+notes: >
+  30 pages. Ticker ETEL, a constituent of egx/shariah_index/2026-04-30.
+
+  MATERIAL PROPERTIES that shaped how this document can be used:
+
+  1. NO TEXT LAYER. Every page is a scanned image; pdfplumber and pypdf both
+     extract zero characters. Values below were read visually from rendered
+     page images, not parsed. Any automated pipeline needs OCR first.
+
+  2. CONDENSED INTERIM, LIMITED REVIEW — not an audit. KPMG Hazem Hassan,
+     Cairo, 21 May 2026, under Egyptian Accounting Standard 30.
+
+  3. EMPHASIS OF MATTER: note 36 describes a fire at the Ramses Central
+     equipment room on 7 July 2025; EGP 1 483 million of capital losses
+     recognised during 2025, EGP 200 million received from insurers as an
+     interim payment, investigations still open.
+
+  4. INTEREST INCOME IS NOT SEPARATELY DISCLOSED. Note 9 (Net finance cost)
+     is narrative only, with no breakdown table. The face of the profit or
+     loss statement shows a single "Finance income" line that is not
+     decomposed. This is what makes Screen B uncomputable from this document
+     and drives ETEL to DATA_INSUFFICIENT — see tests/golden/ETEL/2026-Q1.
+
+  5. Units are L.E. (000) — thousands of Egyptian pounds — declared in every
+     column header. Not assumed.

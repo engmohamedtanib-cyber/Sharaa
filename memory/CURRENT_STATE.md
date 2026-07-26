@@ -67,12 +67,33 @@ Three things about it a future session must not undo:
 - **Provenance stops at the bytes.** The origin URL was not independently verified (egress
   is blocked here) and `retrieved.from` says so. Upgrade it only against a real fetch.
 
+## First real filings processed (2026-07-26)
+
+Telecom Egypt Q1-2026, consolidated + standalone, uploaded by the user. Both registered as
+evidence; **PDF bytes are gitignored, metadata is committed** (`decisions/0002`).
+First golden file written: `tests/golden/ETEL/2026-Q1/expected.yaml`.
+
+**9 of the 12 critical line items** were read off the document with page-level citations,
+and the balance sheet, the loans note and three independent revenue disaggregations all
+reconcile. **ETEL resolves to `DATA_INSUFFICIENT`** — the correct outcome, not a failure:
+
+| Blocker | Why |
+|---|---|
+| Screen B | Interest income is **not separately disclosed**. Note 9 is prose; the P&L shows one undecomposed "Finance income" line. |
+| Screens C, D, E | Denominator is `mcap_avg_12m`. No market-data source exists (M5). |
+
+Three findings that change planning, all in `KNOWN_ISSUES` §6–§8: filings are **image scans
+with no text layer** (OCR/vision mandatory); a **condensed interim is structurally
+insufficient** for the gate, so prefer audited annuals; and **three of five screens are
+blocked on price history, not on filings**.
+
 ## What is NOT built
 
 - **No live data.** No EGX filing discovery, no market prices, no CBE macro. Everything
-  above has been exercised on fixtures only.
-- **No golden set.** Zero real filings have been processed. Extraction accuracy is
-  therefore **unknown**, not "good". Do not trust extraction until the golden set exists.
+  except the ETEL golden file has been exercised on fixtures only.
+- **Golden set: 1 file, no extractor run against it.** It records hand-read values only;
+  `ingestion/extract.py` has still never been run on a real document, so extraction
+  accuracy remains **unknown**, not "good".
 - **No sector classification.** See above — blocks the sector cap in `engine/portfolio.py`
   from being meaningful, though it does not block screening or scoring.
 - **No investment policy (IPS) module.** Schema is drafted; `engine/policy.py` not written.

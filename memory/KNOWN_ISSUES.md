@@ -34,7 +34,31 @@ it from recall. Consequence: the **sector concentration cap in `engine/portfolio
 nothing to bite on** — it will not reject a portfolio that is in fact concentrated in one
 sector. Screening and scoring are unaffected. Blocked on a primary source for sector.
 
-### 6. Universe provenance stops one link short
+### 6. EGX filings arrive as image scans with NO text layer
+Both Telecom Egypt Q1-2026 PDFs (30 and 28 pages) extract **zero characters** —
+`pdfplumber` and `pypdf` agree, one full-page image per page. Text parsing is not merely
+unreliable here, it is impossible. Every filing needs OCR or vision before any extraction
+step runs. `ingestion/extract.py` currently assumes a text layer.
+Found 2026-07-26 on the first two real filings ever received — a sample of two, but two out
+of two.
+
+### 7. A condensed interim does not contain what the gate needs
+Telecom Egypt's Q1-2026 note 9 (Net finance cost) is **prose with no breakdown table**, and
+the profit-or-loss face shows a single undecomposed "Finance income" line. Interest income
+is therefore unobtainable, and Screen B cannot be computed → `DATA_INSUFFICIENT`
+(`tests/golden/ETEL/2026-Q1/expected.yaml`).
+Consequence for data collection: **prefer the audited annual report.** Interim filings may
+be structurally insufficient for the Shariah gate regardless of extraction quality, which
+is a document-selection problem, not an engine problem.
+
+### 8. Screens C, D and E cannot run at all yet
+Their denominator is `mcap_avg_12m` (`config/thresholds.yaml`). A trailing 12-month average
+market capitalisation exists in no filing and there is no market-data source (M5). Shares
+outstanding *are* obtainable from the filings (ETEL: 1 707 071 600, note 26). **Three of
+the five screens are blocked on price history, not on filings** — which was not obvious
+before the first real document.
+
+### 9. Universe provenance stops one link short
 `config/universe.yaml` attests to the exact bytes it was transcribed from (sha256, archived
 in-repo) but **not** to the URL those bytes came from — egress is blocked here, so the
 upload's chain of custody before it reached the session is unverified. Recorded honestly in

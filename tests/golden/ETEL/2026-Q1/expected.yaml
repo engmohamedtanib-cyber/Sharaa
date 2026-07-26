@@ -1,0 +1,240 @@
+# =====================================================================
+# GOLDEN FILE 001 — Telecom Egypt, Q1 2026, consolidated
+# ---------------------------------------------------------------------
+# The first real filing this project has ever processed.
+#
+# Every value below was READ VISUALLY by a human-equivalent pass over
+# rendered page images, because the source has no text layer. None of it
+# came from the extractor it exists to check (tests/golden/README.md).
+#
+# `pdf_page` is the physical page of the PDF. `statement_page` is the
+# number printed at the foot of that page. They differ by 4 and both are
+# recorded, because a citation that cannot be found by a human opening
+# the document is not a citation.
+# =====================================================================
+
+evidence_id: "telecom_egypt/interim_consolidated/2026-03-31"
+sha256: "4f6b057e56100c6a9304e45143bea6e085458fa873a9145755208e81821e5d30"
+
+ticker: ETEL
+issuer_id: ETEL
+company_en: "Telecom Egypt Company"
+fiscal_year: 2026
+period_type: Q1            # three months ended 31/3/2026 — the first
+                           # interim, so cumulative == standalone here and
+                           # no H1-minus-Q1 derivation is needed.
+period_end: "2026-03-31"
+
+basis: CONSOLIDATED
+audit_status: LIMITED_REVIEW      # NOT audited. KPMG Hazem Hassan, 21/05/2026.
+accounting_standard: "EAS 30 — Interim Financial Reporting"
+
+# Declared in every column header as "L.E. (000)". Read, not assumed.
+unit_scale: THOUSANDS
+currency: EGP
+
+# ---------------------------------------------------------------------
+# THE 12 CRITICAL LINE ITEMS (config/line_items.yaml)
+# Values are AS PRINTED, in thousands of EGP.
+# ---------------------------------------------------------------------
+line_items:
+
+  total_assets:
+    value: 240913982
+    pdf_page: 5
+    statement_page: 1
+    location: "Consolidated Interim Statement of Financial Position — Total Assets"
+
+  cash_and_equivalents:
+    value: 10077268
+    pdf_page: 5
+    statement_page: 1
+    location: "Statement of Financial Position — Current Assets — Cash and cash equivalents (Note 21)"
+    corroborated_by: "Note 21, pdf_page 22, statement_page 18 — components sum to 10 077 268"
+
+  time_deposits:
+    value: 2480834
+    pdf_page: 22
+    statement_page: 18
+    location: "Note 21 Cash and cash equivalents — 'Banks - time deposits (less than 3 months)'"
+    note: >
+      Not visible on the face of the balance sheet — it is a component of
+      cash and cash equivalents and only the note breaks it out. Extracting
+      this item from the statement alone is impossible.
+
+  treasury_bills_and_bonds:
+    value: 2746708
+    pdf_page: 5
+    statement_page: 1
+    location: "Statement of Financial Position — Current Assets — 'Financial assets at amortized cost ( treasury bills )'"
+    note: >
+      CAUTION, a genuine trap: Note 21 ALSO lists a treasury-bills line, for
+      bills with maturity under 3 months, which is NIL at 31/3/2026 (it was
+      515 174 at 31/12/2025). The two are different populations. Adding them
+      would double count; taking the note's figure would report zero.
+
+  accounts_receivable:
+    value: 21723785
+    pdf_page: 5
+    statement_page: 1
+    location: "Statement of Financial Position — Current Assets — Trade and notes receivables (Note 19)"
+    corroborated_by: "Note 3-4 Contract balances, pdf_page 13: trade 21 390 436 + notes 333 349 = 21 723 785"
+    ambiguity: >
+      'Debtors and other debit balances' of 7 517 795 (current) and 93 248
+      (non-current) sit on separate lines. Whether Screen E's numerator
+      includes them is a definitional question the spec does not answer.
+      Recorded as a separate item rather than silently merged.
+
+  short_term_borrowings:
+    value: 41085984
+    pdf_page: 5
+    statement_page: 1
+    location: "Statement of Financial Position — Current Liabilities — Short term Loans and credit facilities (Note 23)"
+    corroborated_by: "Note 23, pdf_page 22: 'an amount of L.E. 41 085 984 K due within a year'"
+
+  long_term_borrowings:
+    value: 35027572
+    pdf_page: 5
+    statement_page: 1
+    location: "Statement of Financial Position — Non Current Liabilities — Loans and credit facilities (Note 23)"
+    corroborated_by: >
+      Note 23 states total loans and credit facilities of 76 113 556 at
+      31/3/2026. 35 027 572 + 41 085 984 = 76 113 556 exactly — an
+      independent arithmetic check that both figures were read correctly.
+
+  bank_overdraft:
+    value: null
+    status: NOT_SEPARATELY_DISCLOSED
+    pdf_page: 22
+    statement_page: 18
+    location: "Note 23 Loans and credit facilities"
+    note: >
+      Note 23 in this condensed interim is narrative only — no breakdown
+      table. Overdraft, if any, is inside 'Loans and credit facilities'.
+      NULL means not disclosed. It does NOT mean zero, and must never be
+      read as zero (R3).
+
+  bonds_payable:
+    value: null
+    status: NOT_SEPARATELY_DISCLOSED
+    pdf_page: 22
+    statement_page: 18
+    location: "Note 23 Loans and credit facilities"
+    note: "Same as bank_overdraft — no instrument-level breakdown in a condensed interim."
+
+  total_revenue:
+    value: 28210642
+    pdf_page: 6
+    statement_page: 2
+    location: "Consolidated Interim Statement of Profit or loss — Operating revenues (Note 3)"
+    corroborated_by: >
+      Note 3 disaggregates it three independent ways on pdf_page 13 — by
+      business unit, by timing of recognition, and by geography — and all
+      three sum to 28 210 642.
+    note: >
+      Continued operations only. Discontinued operations carry a further
+      99 688 of revenue (Note 11-1, pdf_page 16).
+
+  interest_income:
+    value: null
+    status: NOT_SEPARATELY_DISCLOSED
+    pdf_page: 16
+    statement_page: 12
+    location: "Note 9 Net finance cost"
+    note: >
+      THIS IS THE FINDING OF THIS GOLDEN FILE.
+
+      The face of the profit or loss statement shows 'Finance income
+      302 627' (pdf_page 6) as a single undecomposed line. Note 9 is prose
+      with no table: it attributes the movement in NET finance cost to an
+      FX loss of 4 675 611 and a fall in 'debit interest' of 862 835, and
+      never states interest income.
+
+      A separate impure-income component IS identifiable — Note 5 Other
+      incomes, pdf_page 14, line 'Fines and earned delay interest' = 30 494
+      — but it is a fragment, not the total, and Screen B needs the total.
+
+      Consequence: Screen B is not computable from this document. Per R3
+      the company resolves to DATA_INSUFFICIENT rather than to an estimate.
+
+  net_profit_attributable:
+    value: 3572017
+    pdf_page: 6
+    statement_page: 2
+    location: "Statement of Profit or loss — 'Net profit for the period for shareholders of the company'"
+    note: >
+      Attributable to shareholders, including discontinued operations
+      (3 502 994 continued + 69 023 discontinued). Total net profit
+      including non-controlling interest is 3 575 914.
+
+# ---------------------------------------------------------------------
+# SUPPORTING FIGURES — not among the 12, but read and cited
+# ---------------------------------------------------------------------
+supporting:
+  total_equity: {value: 62795264, pdf_page: 5, statement_page: 1}
+  equity_attributable_to_shareholders: {value: 62765287, pdf_page: 5, statement_page: 1}
+  total_liabilities: {value: 178118718, pdf_page: 5, statement_page: 1}
+  total_loans_and_credit_facilities: {value: 76113556, pdf_page: 22, statement_page: 18, location: "Note 23"}
+  lease_obligations_non_current: {value: 782063, pdf_page: 5, statement_page: 1}
+  lease_obligations_current: {value: 700954, pdf_page: 5, statement_page: 1}
+  debtors_other_debit_balances_current: {value: 7517795, pdf_page: 5, statement_page: 1}
+  restricted_deposits: {value: 747897, pdf_page: 22, statement_page: 18, location: "Note 21, less-line (Note 30)"}
+  money_market_funds: {value: 131674, pdf_page: 22, statement_page: 18, location: "Note 21"}
+  fines_and_earned_delay_interest: {value: 30494, pdf_page: 14, statement_page: 10, location: "Note 5 Other incomes"}
+  other_incomes_total: {value: 381476, pdf_page: 6, statement_page: 2}
+  finance_income_undecomposed: {value: 302627, pdf_page: 6, statement_page: 2}
+  finance_cost: {value: -8060600, pdf_page: 6, statement_page: 2}
+  donations: {value: 92025, pdf_page: 15, statement_page: 11, location: "Note 8 Other expenses"}
+
+# Shares outstanding — needed for market capitalisation, which is the
+# denominator of Screens C, D and E. Read from the filing, not from a
+# market data provider.
+shares_outstanding:
+  value: 1707071600
+  unit: SHARES
+  par_value_egp: 10
+  pdf_page: 23
+  statement_page: 19
+  location: "Note 26 Capital"
+  note: "Egyptian Government owns 70%."
+
+# ---------------------------------------------------------------------
+# ARITHMETIC CHECKS THAT PASSED (validation V1/V2 equivalents)
+# ---------------------------------------------------------------------
+checks_passed:
+  - "Total Equity and Liabilities 240 913 982 == Total Assets 240 913 982"
+  - "Non Current Assets 188 478 813 + Current Assets 52 435 169 == 240 913 982"
+  - "Total Equity 62 795 264 + Total Liabilities 178 118 718 == 240 913 982"
+  - "Long-term 35 027 572 + short-term 41 085 984 == Note 23 total 76 113 556"
+  - "Note 21 components sum to Cash and cash equivalents 10 077 268"
+  - "Note 3 revenue disaggregated three ways, each summing to 28 210 642"
+
+# ---------------------------------------------------------------------
+# EXPECTED SCREENING OUTCOME
+# ---------------------------------------------------------------------
+expected_screening:
+  status: DATA_INSUFFICIENT
+  breach_type: TYPE_4_DATA
+  blocking_reasons:
+    - screen: B
+      reason: >
+        Interest income is not separately disclosed anywhere in the document
+        (see line_items.interest_income). The numerator cannot be formed.
+    - screens: [C, D, E]
+      reason: >
+        The denominator is mcap_avg_12m (config/thresholds.yaml
+        denominator_convention). A trailing 12-month average market
+        capitalisation is not in any filing and no market-data source exists
+        yet. Shares outstanding are known; the price history is not.
+  computable_today: [A]
+  notes: >
+    Screen A has no non-permissible revenue visible: Note 3-1 disaggregates
+    all 28 210 642 across five telecom business units. That is consistent
+    with a pass, but absence of a disclosed line is not evidence of zero, and
+    a single passing screen cannot lift a DATA_INSUFFICIENT verdict anyway —
+    the gate requires all five (R7).
+
+    THIS OUTCOME IS THE CORRECT ONE, not a failure of the exercise. A
+    condensed interim with a narrative finance-cost note genuinely does not
+    contain what the gate needs. The right next document is the most recent
+    AUDITED ANNUAL report, whose notes are not condensed.

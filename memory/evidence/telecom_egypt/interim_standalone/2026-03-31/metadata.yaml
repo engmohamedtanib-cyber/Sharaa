@@ -1,0 +1,42 @@
+# Evidence record. Schema and admission rules: memory/evidence/README.md
+# Bytes not committed (*.pdf is gitignored); metadata is. See the sibling
+# consolidated record for the full document notes.
+
+id: "telecom_egypt/interim_standalone/2026-03-31"
+version: 1
+
+title: "Telecom Egypt — Condensed Standalone Interim Financial Statements, three months ended 31 March 2026, and Limited Review Report"
+publisher: "Telecom Egypt Company (An Egyptian Joint Stock Company)"
+kind: INTERIM_FINANCIAL_STATEMENTS
+
+file: "standalone.pdf"
+media_type: "application/pdf"
+bytes: 6156664
+sha256: "e110ad96240203f4a3ec62b4c747472095c656f014f946644805d5f8cfd307af"
+
+as_of: "2026-03-31"
+
+acquired:
+  at: "2026-07-26"
+  via: USER_UPLOAD
+  original_filename: "EAS_Standalone_Statement5388573d005b4890a036889e77ed44a6.pdf"
+  url: null
+  url_verified: false
+
+used_by: []
+
+supersedes: null
+superseded_by: null
+
+notes: >
+  28 pages, scanned, no text layer — same as the consolidated record.
+
+  Held as the counterpart to the consolidated statements for the same period.
+  NOT yet read, and deliberately not extracted: `config/sources.yaml`
+  `statement_basis` is still null, meaning the project has not decided whether
+  screening runs on consolidated or standalone figures. Extracting both before
+  that question is answered would produce two competing sets of numbers for one
+  company and one period, which is how a contradiction enters storage.
+
+  The pair is genuinely useful once the question is settled: it is the cheapest
+  available measurement of how much the answer moves with the basis.
