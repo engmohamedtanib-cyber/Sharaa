@@ -109,9 +109,13 @@ resolves to a record, ADR and KNOWN_ISSUES numbering is gap-free, and the test c
 thresholds version quoted in prose match reality.
 
 Built because `BRAIN.md` routed to `knowledge/` while that directory did not exist. On its
-first run it found a second dead link (`docs/ARCHITECTURE_V2.md` pointed at
-`docs/FUTURE_PROPOSALS.md`; the file is in `memory/`) and two stale test counts. **If it
-reports a finding, fix the document or the repo — never the check.**
+first run it found a second dead router link in `docs/ARCHITECTURE_V2.md` (it sent readers
+to a docs/ copy of FUTURE_PROPOSALS.md that has always lived in `memory/`) plus two stale
+test counts. **If it reports a finding, fix the document or the repo — never the check.**
+
+Note the shape of that fix: naming a dead path *inside backticks*, even to describe it,
+makes the sentence itself a dead reference. This paragraph was rewritten because the gate
+caught exactly that — the check does not care why a link is broken.
 
 `decisions/` is exempt from the path check: an ADR cites where a file was when the decision
 was made, and forcing it current would mean editing history (R5).
