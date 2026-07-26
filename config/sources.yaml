@@ -22,12 +22,90 @@ exchange:
     priority: 1
 
 # Per-company overrides / IR pages. Keyed by EGX code.
-# Example shape (fill in during Phase 2):
 #
-# COMI:
-#   - source_type: COMPANY_IR
-#     url_pattern: "https://www.example-ir.com/financial-reports"
-#     discovery_method: DIRECTORY_LISTING
-#     selector: "a[href$='.pdf']"
-#     priority: 2
-companies: {}
+# ---------------------------------------------------------------------
+# EVERY URL BELOW IS UNVERIFIED (`verified: false`).
+#
+# They came from WebSearch result listings on 2026-07-26. Nothing in this
+# session could OPEN them: egress returns a 403 policy denial on CONNECT
+# for every host, re-tested today including a Wikipedia control
+# (decisions/0004). So these are search hits, not pages anyone looked at.
+#
+# That is acceptable here and nowhere else. This file is a DISCOVERY
+# registry - it records where to look, never a figure. A wrong URL costs
+# a wasted click; it cannot contaminate a stored number, because anything
+# downloaded still has to pass through evidence admission
+# (checklists/NEW_EVIDENCE.md) before a single value is extracted.
+#
+# Set `verified: true` only after actually fetching the page.
+# ---------------------------------------------------------------------
+companies:
+  TMGH:
+    - source_type: COMPANY_IR
+      url_pattern: "https://talaatmoustafa.com/investor-relations/"
+      discovery_method: DIRECTORY_LISTING
+      selector: "a[href$='.pdf']"
+      priority: 2
+      verified: false
+      notes: >-
+        Search results exposed direct PDF paths under /upload/ for both
+        separate and consolidated statements, English versions.
+
+  ETEL:
+    - source_type: COMPANY_IR
+      url_pattern: "https://ir.te.eg/en/FinancialInformation/FinancialStatements"
+      discovery_method: DIRECTORY_LISTING
+      selector: null
+      priority: 2
+      verified: false
+    - source_type: COMPANY_IR
+      url_pattern: "https://ir.te.eg/en/FinancialInformation/AnnualReports"
+      discovery_method: DIRECTORY_LISTING
+      selector: null
+      priority: 3
+      verified: false
+
+  EFIH:
+    - source_type: COMPANY_IR
+      url_pattern: "https://investors.efinanceinvestment.com/"
+      discovery_method: DIRECTORY_LISTING
+      selector: null
+      priority: 2
+      verified: false
+
+  EFID:
+    - source_type: COMPANY_IR
+      url_pattern: "https://ir.edita.com.eg/en/results-center"
+      discovery_method: DIRECTORY_LISTING
+      selector: null
+      priority: 2
+      verified: false
+    - source_type: COMPANY_IR
+      url_pattern: "https://ir.edita.com.eg/en/presentations-and-publications"
+      discovery_method: DIRECTORY_LISTING
+      selector: null
+      priority: 3
+      verified: false
+
+# ---------------------------------------------------------------------
+# WHAT TO COLLECT, AND WHAT TO REJECT
+#
+# WANTED: the full periodic financial statements - balance sheet, income
+# statement, AND the notes. The notes are not optional: interest income
+# is routinely buried inside "other income" and only the note breaks it
+# out, and Screen B turns on exactly that figure.
+#
+# NOT USABLE: earnings releases, results presentations, press releases,
+# fact sheets. They carry headline figures only. Nine of the twelve
+# critical line items (time deposits, treasury bills, overdraft, bonds
+# payable, receivables...) do not appear in them at all, and they offer
+# no page-level citation, which R1 requires.
+# ---------------------------------------------------------------------
+
+# OPEN QUESTION - affects every screening ratio, unresolved:
+# consolidated or separate/standalone statements? ENGINE_SPEC and
+# EXTRACTION_SPEC do not say. Screening a group on separate accounts
+# would omit subsidiary debt and subsidiary revenue, which changes
+# Screens A, C, D and E. Raised with the user 2026-07-26; must be pinned
+# in ENGINE_SPEC before the first real extraction (CLAUDE.md §9).
+statement_basis: null
