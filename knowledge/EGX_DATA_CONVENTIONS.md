@@ -92,6 +92,32 @@ payload is a single `<table>`. openpyxl and xlrd both fail on it. Parse it as
 HTML, not as a workbook.
 > Same record.
 
+## Price history — two ways to get a wrong denominator
+
+**Use `Close`, never `Adj. Close`.** Market capitalisation is the price actually
+traded multiplied by shares outstanding. Adjusted close back-adjusts for
+dividends so that return series are comparable, and it drifts *below* the traded
+price as adjustments accumulate — on ETEL's 2026 history the two diverge by over
+1.50 EGP within six months. Feeding adjusted prices into `mcap_avg_12m` shrinks
+the denominator of Screens C, D and E and makes every company look more
+compliant than it is.
+> Observed 2026-07-26 in a stockanalysis.com export: `Close 95.65` against
+> `Adj. Close 94.15` on the same row.
+
+**A partial window biases toward compliance, so never average what you have.**
+The denominator is a *trailing 12-month* average by design (`ENGINE_SPEC` §2.6).
+A shorter window is not a smaller sample of the same thing — it is a different
+number. ETEL traded near 37-40 EGP in August 2025 and near 103 in July 2026, so
+averaging only the recent months would have raised the denominator sharply,
+shrunk the debt ratio, and moved the company toward a pass. Missing months are
+`DATA_INSUFFICIENT`, not an invitation to average what is available (R3).
+
+**Copy-paste from price sites can destroy the date column.** A 117-row paste
+from stockanalysis.com arrived with every `Date` cell reading "2026" — no day,
+no month — which makes the rows unalignable to any window. Prefer a screenshot,
+or a real CSV export; and reconstructing dates by counting trading days
+backwards is inference, not data.
+
 ## Money and time
 
 All money is `Decimal` in EGP, stored `NUMERIC(20,2)`. Ratios are `Decimal`,
