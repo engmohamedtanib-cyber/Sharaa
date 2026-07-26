@@ -108,3 +108,26 @@ def strong_inputs(fin: Financials | None = None) -> ScoringInputs:
         ),
         target_position_value=D("1000"),
     )
+
+
+# ----------------------------------------------------------------------
+# Suite size, for the cross-artefact consistency check
+# ----------------------------------------------------------------------
+_COLLECTION: dict[str, object] = {}
+
+
+def pytest_collection_modifyitems(session, config, items):
+    """Record the suite size and whether this was a whole-suite run.
+
+    A targeted run (``pytest tests/test_one.py``) collects a subset, and
+    comparing a documented total against a subset would fail for the wrong
+    reason — so the count is only offered when the full suite was collected.
+    """
+    _COLLECTION["count"] = len(items)
+    _COLLECTION["full"] = not config.option.file_or_dir
+
+
+@pytest.fixture(scope="session")
+def collected_test_count() -> int | None:
+    """Size of the suite, or ``None`` when only part of it was collected."""
+    return _COLLECTION["count"] if _COLLECTION.get("full") else None  # type: ignore[return-value]

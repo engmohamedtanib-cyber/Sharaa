@@ -130,8 +130,8 @@ checklists/           ← recurring procedures: new evidence, rebalance, session
 examples/             ← playbooks for recurring tasks
 docs/                 ← full specifications (heavy; load on demand)
 src/                  ← the deterministic engine + ingestion + reporting
-tests/                ← 709 tests. If these are green, the rules are intact.
-tests/golden/         ← hand-verified filings. EMPTY — extraction is unproven.
+tests/                ← 750 tests. If these are green, the rules are intact.
+tests/golden/         ← hand-verified filings. 1 file (ETEL Q1-26); extraction unproven.
 config/               ← every threshold, versioned. Never hardcode a number.
 ```
 

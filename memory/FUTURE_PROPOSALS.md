@@ -83,7 +83,7 @@ further:
 | `/specify` — spec as source of truth | `docs/ENGINE_SPEC.md`, `docs/EXTRACTION_SPEC.md` |
 | `/plan` — technical approach | `docs/ARCHITECTURE_V2.md`, `docs/ROADMAP_V1.md` |
 | `/tasks` — the breakdown | `memory/NEXT_TASK.md` — deliberately **one** task, not a backlog |
-| `/analyze` — consistency gate | `uv run pytest` (709 tests) + `decisions/` ADRs |
+| `/analyze` — consistency gate | `uv run pytest` (750 tests) + `decisions/` ADRs |
 
 `CLAUDE.md` R8 — *"If you believe a rule in `ENGINE_SPEC.md` is wrong, say so and propose
 the change. Do not implement your own version. The specification is the contract"* — is the

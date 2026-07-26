@@ -1,6 +1,6 @@
 # CURRENT_STATE.md
 
-**Updated:** 2026-07-26 · **Suite:** 709 tests green · ruff clean · mypy --strict on 5 layers
+**Updated:** 2026-07-26 · **Suite:** 750 tests green · ruff clean · mypy --strict on 5 layers
 
 Rewrite this file at the end of every working session. It is the first thing a future
 session reads. Keep it short and true.
@@ -28,6 +28,7 @@ session reads. Keep it short and true.
 | `ingestion/reconcile.py` | Dual-pass agreement, §3.2/§3.3 gates | High |
 | `research/transcribers/transcribe_index.py` | Constituents export → `config/universe.yaml` | High — round-trips against the archived workbook |
 | `store/evidence.py` | Evidence registry; recomputes every hash from bytes | High — 100% branch |
+| `consistency.py` | Cross-artefact gate: dead links, stale counts, bad citations | High — runs in the suite |
 | `reporting/journal.py` | Decision journal, falsifiability enforced | High |
 | `reporting/order_sheet.py` | Limit-only orders (market unrepresentable) | High |
 | `store/jsonl_ledger.py` | Git-native append-only ledger persistence | High |
@@ -43,7 +44,7 @@ Fixed, and the substrate around it completed before starting a new module:
 | `store/evidence.py` | resolves an id, **recomputes the hash from the bytes**, raises on mismatch |
 | `knowledge/` | verified domain facts, every one carrying a citation |
 | `checklists/` | `NEW_EVIDENCE`, `INDEX_REBALANCE`, `SESSION_END` |
-| `tests/golden/README.md` | the golden-set contract. Set is still **empty**. |
+| `tests/golden/README.md` | the golden-set contract. 1 file so far. |
 
 `tests/test_evidence.py` walks every committed record and re-digests it on every run,
 so a hash in a YAML file is a claim that is checked rather than merely stated. There is
@@ -99,6 +100,21 @@ ones. A test requires the shipped config to reproduce the broker's own worked ex
 **Minimum economic trade: 800 EGP** (`engine.portfolio.min_economic_trade_value`). Three
 positions therefore need 2 400 EGP; `min_holdings_capital` was already 3 000, set before any
 fee data existed, and is left unchanged — vindicated with a 25% margin.
+
+## The consistency gate (`uv run python -m consistency`)
+
+Runs inside the suite. Checks the **seams between** artefacts, which no other test covers:
+every documented path resolves, every `decisions/NNNN` citation exists, every `evidence_id`
+resolves to a record, ADR and KNOWN_ISSUES numbering is gap-free, and the test count and
+thresholds version quoted in prose match reality.
+
+Built because `BRAIN.md` routed to `knowledge/` while that directory did not exist. On its
+first run it found a second dead link (`docs/ARCHITECTURE_V2.md` pointed at
+`docs/FUTURE_PROPOSALS.md`; the file is in `memory/`) and two stale test counts. **If it
+reports a finding, fix the document or the repo — never the check.**
+
+`decisions/` is exempt from the path check: an ADR cites where a file was when the decision
+was made, and forcing it current would mean editing history (R5).
 
 ## What is NOT built
 

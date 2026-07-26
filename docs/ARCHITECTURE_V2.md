@@ -510,7 +510,7 @@ Frozen means:
 - The autonomy tiers in §8 are fixed.
 - The ledger, IPS, and audit obligations above are in scope for V1.
 
-New ideas discovered during implementation are written to `docs/FUTURE_PROPOSALS.md`
+New ideas discovered during implementation are written to `memory/FUTURE_PROPOSALS.md`
 and considered for V2. They do not modify this document. The only admissible reason to
 reopen V1 architecture is a discovery that makes a frozen element *impossible or unsafe*,
 not merely improvable.

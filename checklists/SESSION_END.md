@@ -53,3 +53,19 @@ Before you write the summary, re-read what you are claiming:
       against fixtures? Say which.
 - [ ] Did you leave any part of the task unfinished? Say so plainly and say
       why. Scaling the work down is the user's call, not yours.
+
+---
+
+## The consistency gate
+
+- [ ] **`uv run python -m consistency`** — or just run the suite, which includes it.
+
+It checks the *seams between* artefacts, which no other test covers: that every
+path a document points at exists, that every `decisions/NNNN` citation resolves,
+that every `evidence_id` resolves to a real record, that ADR and KNOWN_ISSUES
+numbering has no gaps or duplicates, and that the test count and thresholds
+version quoted in prose match reality.
+
+It exists because `BRAIN.md` routed sessions to `knowledge/` for weeks while that
+directory did not exist (`decisions/0006`). If it reports a finding, **fix the
+document or the repo — never the check**.
