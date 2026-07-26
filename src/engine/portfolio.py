@@ -51,15 +51,19 @@ def holdings_bounds(capital_egp: Decimal, cfg: Thresholds) -> tuple[int | None, 
 # ----------------------------------------------------------------------
 # Trade-cost gate (§7.3)
 # ----------------------------------------------------------------------
-def _fee_params(cfg: Thresholds) -> tuple[Decimal, Decimal, Decimal, Decimal]:
+_FEE_KEYS = ("fixed_fee_egp", "commission_pct", "min_fee_egp", "levies_pct", "tax_pct")
+
+
+def _fee_params(cfg: Thresholds) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal]:
     ex = cfg.execution()
-    missing = [k for k in ("commission_pct", "min_fee_egp", "levies_pct", "tax_pct") if ex.get(k) is None]
+    missing = [k for k in _FEE_KEYS if ex.get(k) is None]
     if missing:
         raise ExecutionFeesError(
             "execution fees are unset in config/thresholds.yaml "
             f"({', '.join(missing)}); verify against Thndr's schedule before any live run (§7.3)"
         )
     return (
+        Decimal(str(ex["fixed_fee_egp"])),
         Decimal(str(ex["commission_pct"])),
         Decimal(str(ex["min_fee_egp"])),
         Decimal(str(ex["levies_pct"])),
@@ -68,16 +72,63 @@ def _fee_params(cfg: Thresholds) -> tuple[Decimal, Decimal, Decimal, Decimal]:
 
 
 def trade_cost(trade_value: Decimal, cfg: Thresholds) -> TradeCost:
-    """Estimate round-trip cost and decide the §7.3 economic-suppression gate."""
+    """Estimate round-trip cost and decide the §7.3 economic-suppression gate.
+
+    The cost model is **fixed plus percentage**, because that is the shape of
+    the real schedule (``thndr/fee_schedule/2026-07-26``): a flat 2 EGP per
+    order, a 0.1% brokerage commission, per-order market levies, and a
+    regulator levy carrying a 1 EGP floor::
+
+        per_side = fixed + commission_pct*V + levies_pct*V + max(tax_pct*V, min_fee)
+
+    The flat term is the whole point. A purely proportional model makes cost a
+    constant percentage at every size, so a 300 EGP trade looks exactly as
+    economic as a 300 000 EGP one. It is not, and the error runs in the
+    dangerous direction — understating the cost of small trades is what lets a
+    system recommend a trade that loses money on execution alone
+    (``decisions/0007``).
+
+    Doubled for the round trip: the schedule states that brokerage and
+    third-party fees apply to buy *and* sell orders.
+    """
     if trade_value <= ZERO:
         raise ValueError("trade_value must be positive")
-    commission_pct, min_fee, levies_pct, tax_pct = _fee_params(cfg)
-    commission = max(commission_pct * trade_value, min_fee)
-    per_side = commission + levies_pct * trade_value + tax_pct * trade_value
+    fixed, commission_pct, min_fee, levies_pct, tax_pct = _fee_params(cfg)
+    per_side = (
+        fixed
+        + commission_pct * trade_value
+        + levies_pct * trade_value
+        + max(tax_pct * trade_value, min_fee)
+    )
     round_trip = Decimal(2) * per_side
     cost_pct = round_trip / trade_value
     ceiling = cfg.constraint("max_trade_cost_pct")
     return TradeCost(round_trip_cost=round_trip, cost_pct=cost_pct, suppressed=cost_pct > ceiling)
+
+
+def min_economic_trade_value(cfg: Thresholds) -> Decimal:
+    """Smallest trade value whose round-trip cost still clears the gate.
+
+    Exists so the system can answer "how much do I actually need?" with a
+    number instead of a refusal. Solving ``2*(fixed + max_component)/V <=
+    ceiling`` for V, taking the regulator floor as binding — which it is for
+    any order this portfolio will place::
+
+        V >= 2*(fixed + min_fee) / (ceiling - 2*(commission_pct + levies_pct))
+
+    Raises :class:`ExecutionFeesError` if the percentage components alone
+    already exceed the ceiling, in which case no trade of any size is economic
+    and the honest answer is that this broker cannot serve this strategy.
+    """
+    fixed, commission_pct, min_fee, levies_pct, _tax_pct = _fee_params(cfg)
+    ceiling = cfg.constraint("max_trade_cost_pct")
+    proportional = Decimal(2) * (commission_pct + levies_pct)
+    if proportional >= ceiling:
+        raise ExecutionFeesError(
+            f"percentage fees alone ({proportional}) meet or exceed the "
+            f"{ceiling} round-trip ceiling; no trade size is economic"
+        )
+    return (Decimal(2) * (fixed + min_fee)) / (ceiling - proportional)
 
 
 # ----------------------------------------------------------------------

@@ -87,6 +87,19 @@ with no text layer** (OCR/vision mandatory); a **condensed interim is structural
 insufficient** for the gate, so prefer audited annuals; and **three of five screens are
 blocked on price history, not on filings**.
 
+## Execution fees are real now (decisions/0007)
+
+`config/thresholds.yaml` v1.1.0 carries Thndr's published schedule (evidence
+`thndr/fee_schedule/2026-07-26`), replacing the deliberate nulls. The cost model became
+**fixed-plus-percentage** because the real brokerage fee is 2 EGP **plus** 0.1% — a shape
+`max(pct, min)` could not express, and one that made small trades look as economic as large
+ones. A test requires the shipped config to reproduce the broker's own worked example
+(5 000 EGP → 9.25 EGP per side) exactly.
+
+**Minimum economic trade: 800 EGP** (`engine.portfolio.min_economic_trade_value`). Three
+positions therefore need 2 400 EGP; `min_holdings_capital` was already 3 000, set before any
+fee data existed, and is left unchanged — vindicated with a 25% margin.
+
 ## What is NOT built
 
 - **No live data.** No EGX filing discovery, no market prices, no CBE macro. Everything

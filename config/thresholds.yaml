@@ -15,13 +15,26 @@
 # under `params:` within their pillar.
 # =====================================================================
 
-version: "1.0.0"
-last_verified: "2026-07-24"
+version: "1.1.0"
+last_verified: "2026-07-26"
 governing_standard: "AAOIFI"
 # Screening denominator convention (ENGINE_SPEC §2.6).
 denominator_convention: "MCAP_AVG_12M"
 
 changelog:
+  - version: "1.1.0"
+    date: "2026-07-26"
+    note: >-
+      Execution fees populated from Thndr's published schedule (evidence
+      `thndr/fee_schedule/2026-07-26`), replacing the deliberate nulls.
+      Adds `fixed_fee_egp`: the real brokerage fee is 2 EGP PLUS 0.1%, an
+      additive shape the previous max(pct, min) model could not express.
+      That model made cost a constant percentage at every size and so
+      understated small trades — the direction that lets an uneconomic
+      trade through. `min_fee_egp` now gates only the FRA component, the
+      one fee carrying a minimum. See decisions/0007. The shipped values
+      reproduce the source's own worked example (5 000 EGP -> 9.25 EGP
+      per side) under test.
   - version: "1.0.0"
     date: "2026-07-24"
     note: >-
@@ -415,11 +428,45 @@ portfolio:
   # Execution fees — MUST be verified against Thndr before live run.
   # Left null on purpose; the trade-cost gate fails loudly if unset
   # (ENGINE_SPEC §7.3).
+  # -------------------------------------------------------------------
+  # EXECUTION FEES (ENGINE_SPEC §7.3)
+  #
+  # Source: evidence record `thndr/fee_schedule/2026-07-26`, the Thndr
+  # Help Center "Thndr Order Fees" page, Egypt / stocks & ETFs section.
+  # Read 2026-07-26. NOT recalled - §7.3 forbids shipping guessed values.
+  #
+  # Fee schedules change without notice. Re-read before any live run and
+  # bump `version` with a changelog entry (R4).
+  #
+  # Cost model actually applied, per side:
+  #   fixed_fee_egp
+  #   + commission_pct * V
+  #   + levies_pct     * V
+  #   + max(tax_pct * V, min_fee_egp)
+  # Round trip is twice that, because the source states plainly that both
+  # brokerage and third-party fees apply to buy AND sell orders.
+  #
+  # Reproduces the source's own worked example exactly: a 5 000 EGP order
+  # costs 9.25 EGP per side. Asserted in tests/test_engine_portfolio.py,
+  # so a future edit that breaks the match fails the suite.
+  # -------------------------------------------------------------------
   execution:
-    commission_pct: null
-    min_fee_egp: null
-    levies_pct: null
-    tax_pct: null
+    # Thndr "Fixed order fee": 2 EGP per order. The reason the model needed
+    # a fixed term at all - it dominates small orders (decisions/0007).
+    fixed_fee_egp: 2.00
+    # Thndr "Variable order fee": 0.1% of executed order value.
+    commission_pct: 0.001
+    # EGX 0.01% + MCDR 0.01% + risk insurance 0.005%, all per order.
+    # Their 5 000 EGP caps bind only above ~50m EGP of order value and are
+    # deliberately not modelled.
+    levies_pct: 0.00025
+    # FRA: 0.005% per transaction, floor 1 EGP, cap 250 EGP. Not a tax in
+    # the ordinary sense - it is the regulator levy, and it is the only
+    # component carrying a minimum, which is what `min_fee_egp` gates.
+    # The engine treats one order as one transaction; an order filling in
+    # fragments incurs this more than once and is therefore understated.
+    tax_pct: 0.00005
+    min_fee_egp: 1.00
 
 # =====================================================================
 # PURIFICATION (ENGINE_SPEC §8)

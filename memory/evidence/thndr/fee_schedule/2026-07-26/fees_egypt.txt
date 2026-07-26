@@ -1,0 +1,55 @@
+Thndr Help Center — "Thndr Order Fees"
+"A complete breakdown of trading fees — who charges them and how they're calculated."
+Updated: "over 2 weeks ago" (as displayed 2026-07-26)
+
+Transcribed verbatim by the user from the Thndr Help Center page.
+EGYPT / STOCKS & ETFs SECTION ONLY. US and UAE sections omitted (out of scope, R6).
+
+Entity: Thndr Securities Brokerage, licensed by the Financial Regulatory
+Authority (FRA) of Egypt, licence no. 804.
+
+--- THNDR BROKERAGE FEES (Stocks and ETFs) ---
+Fee                  | Amount                          | Basis
+Fixed order fee      | 2 EGP                           | Per order
+Variable order fee   | 0.1% of executed order value    | Per order
+
+Note: Thndr Trader subscribers get 50 waived commission orders per month.
+
+--- THIRD-PARTY FEES (passed through at cost) ---
+Entity           | Rate    | Basis           | Min   | Max
+EGX              | 0.01%   | Per order       | 0 EGP | 5,000 EGP
+MCDR             | 0.01%   | Per order       | 0 EGP | 5,000 EGP
+FRA              | 0.005%  | Per transaction | 1 EGP | 250 EGP
+Risk insurance   | 0.005%  | Per order       | 0 EGP | 5,000 EGP
+
+Note: "An order is what you submit in the app. A transaction is an executed
+order — or part of one. A single order can result in multiple transactions if
+it fills across different counterparties. The FRA fee applies per transaction,
+not per order."
+
+--- WORKED EXAMPLE FROM THE SOURCE ---
+Buy order worth 5,000 EGP executing as a single transaction:
+  Thndr fixed fee    : 2.00 EGP
+  Thndr variable fee : 5.00 EGP   (0.1% x 5,000)
+  Total brokerage    : 7.00 EGP
+  EGX                : 0.50 EGP   (0.01%)
+  MCDR               : 0.50 EGP   (0.01%)
+  FRA                : 1.00 EGP   (minimum applies; 0.005% x 5,000 = 0.25)
+  Risk insurance     : 0.25 EGP   (0.005%)
+  Total third-party  : 2.25 EGP
+  TOTAL FEES         : 9.25 EGP
+
+--- MCDR ANNUAL CUSTODY FEE ---
+Rate 0.01%, basis: market value of stock portfolio on December 31st.
+Deducted from the Thndr Wallet in January. Stock holdings only; mutual funds
+excluded. Example given: 75,000 EGP portfolio -> 7.50 EGP.
+
+--- FAQ POINTS RELEVANT TO THE ENGINE ---
+"Are fees charged on both buy and sell orders?  Yes — brokerage and
+third-party fees apply to both buy and sell orders."
+"Third-party government fees cannot be waived — they are set by regulators."
+
+--- MUTUAL FUNDS ---
+Thndr charges no fees or commission on mutual fund orders, and there are no
+third-party fees. Funds may charge their own subscription/redemption fees set
+by the fund administrator.

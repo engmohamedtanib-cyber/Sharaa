@@ -13,6 +13,7 @@ from engine.portfolio import (
     build_weights,
     contribution_rebalance,
     holdings_bounds,
+    min_economic_trade_value,
     rebalance_needed,
     target_weight,
     trade_cost,
@@ -27,33 +28,89 @@ def test_target_weight_bands(cfg):
     assert target_weight(D("74.99"), cfg) == D("0")
 
 
-def test_trade_cost_gate_fails_loudly_when_fees_unset(cfg):
-    with pytest.raises(ExecutionFeesError):
-        trade_cost(D("1000"), cfg)
-
-
-def test_trade_cost_gate_computes_when_fees_set(cfg):
-    # Inject a fee schedule into a copy of the raw config (config stays immutable).
+def with_fees(cfg, **overrides):
+    """A config copy with an injected execution block (config stays immutable)."""
     raw = {**cfg.raw}
-    raw["portfolio"] = {
-        **raw["portfolio"],
-        "execution": {"commission_pct": 0.001, "min_fee_egp": 5, "levies_pct": 0.0005, "tax_pct": 0.00125},
-    }
-    cfg2 = replace(cfg, raw=raw)
-    tc = trade_cost(D("100000"), cfg2)
-    assert tc.round_trip_cost > 0
-    assert isinstance(tc.suppressed, bool)
+    raw["portfolio"] = {**raw["portfolio"], "execution": overrides}
+    return replace(cfg, raw=raw)
 
 
-def test_trade_cost_suppresses_uneconomic_small_trade(cfg):
-    raw = {**cfg.raw}
-    raw["portfolio"] = {
-        **raw["portfolio"],
-        "execution": {"commission_pct": 0.001, "min_fee_egp": 20, "levies_pct": 0.0005, "tax_pct": 0.00125},
-    }
-    cfg2 = replace(cfg, raw=raw)
-    # A 500 EGP trade pays the 20 EGP minimum twice -> cost >> 1% -> suppressed.
-    assert trade_cost(D("500"), cfg2).suppressed is True
+@pytest.mark.parametrize("absent", ["fixed_fee_egp", "commission_pct", "min_fee_egp", "levies_pct", "tax_pct"])
+def test_trade_cost_gate_fails_loudly_when_any_fee_is_unset(cfg, absent):
+    """ENGINE_SPEC §7.3: never ship guessed fee values — fail loudly if unset."""
+    fees = {"fixed_fee_egp": 2, "commission_pct": 0.001, "min_fee_egp": 1, "levies_pct": 0.00025, "tax_pct": 0.00005}
+    fees[absent] = None
+    with pytest.raises(ExecutionFeesError, match=absent):
+        trade_cost(D("1000"), with_fees(cfg, **fees))
+
+
+def test_trade_cost_reproduces_the_brokers_own_worked_example(cfg):
+    """The shipped config must reproduce Thndr's published example to the piastre.
+
+    Source (`thndr/fee_schedule/2026-07-26`): a 5 000 EGP order filling as one
+    transaction costs 2.00 brokerage fixed + 5.00 variable + 0.50 EGX + 0.50
+    MCDR + 1.00 FRA (minimum applies) + 0.25 risk insurance = 9.25 per side.
+
+    This is the test that makes the fee config self-checking rather than four
+    numbers someone typed in.
+    """
+    tc = trade_cost(D("5000"), cfg)
+    assert tc.round_trip_cost == D("18.50")  # 9.25 per side, both sides charged
+
+
+def test_the_flat_fee_makes_cost_size_dependent(cfg):
+    """The reason the model needed a fixed term: cost is not a constant %.
+
+    Under the old purely-proportional model these two would have been equal,
+    and a 500 EGP trade would have looked exactly as economic as a 500 000 one.
+    """
+    small = trade_cost(D("500"), cfg)
+    large = trade_cost(D("500000"), cfg)
+    assert small.cost_pct > large.cost_pct * 5
+    assert small.suppressed is True
+    assert large.suppressed is False
+
+
+def test_a_1000_egp_trade_is_economic_but_splitting_it_three_ways_is_not(cfg):
+    """The concrete question the user asked, answered by the engine.
+
+    One 1 000 EGP position clears the 1% round-trip gate. The same 1 000 split
+    across the three positions `min_holdings` requires does not — each ~333 EGP
+    order pays the same flat 3 EGP.
+    """
+    assert trade_cost(D("1000"), cfg).suppressed is False
+    assert trade_cost(D("1000") / 3, cfg).suppressed is True
+
+
+def test_min_economic_trade_value_is_the_breakeven_of_the_gate(cfg):
+    """Just below it suppresses, just above it does not — so the number the
+    system reports is the number the gate actually enforces."""
+    floor = min_economic_trade_value(cfg)
+    assert trade_cost(floor - D("1"), cfg).suppressed is True
+    assert trade_cost(floor + D("1"), cfg).suppressed is False
+
+
+def test_min_economic_trade_value_refuses_when_percentages_alone_exceed_the_gate(cfg):
+    """A broker whose proportional fees breach the ceiling cannot be served at
+    any trade size. Say so rather than return a meaningless number."""
+    cfg2 = with_fees(cfg, fixed_fee_egp=0, commission_pct=0.02, min_fee_egp=0, levies_pct=0, tax_pct=0)
+    with pytest.raises(ExecutionFeesError, match="no trade size is economic"):
+        min_economic_trade_value(cfg2)
+
+
+def test_regulator_minimum_binds_only_on_small_orders(cfg):
+    """FRA is max(0.005% * V, 1 EGP). The floor stops binding at 20 000 EGP."""
+    below = trade_cost(D("10000"), cfg).round_trip_cost
+    # 2 + 10 + 2.50 + max(0.50, 1.00) = 15.50 per side
+    assert below == D("31.00")
+    above = trade_cost(D("40000"), cfg).round_trip_cost
+    # 2 + 40 + 10 + max(2.00, 1.00) = 54.00 per side
+    assert above == D("108.00")
+
+
+def test_trade_cost_rejects_a_non_positive_value(cfg):
+    with pytest.raises(ValueError, match="must be positive"):
+        trade_cost(D("0"), cfg)
 
 
 def test_holdings_bounds_by_capital(cfg):

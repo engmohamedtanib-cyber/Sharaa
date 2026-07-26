@@ -1,0 +1,69 @@
+# Evidence record. Schema and admission rules: memory/evidence/README.md
+
+id: "thndr/fee_schedule/2026-07-26"
+version: 1
+
+title: "Thndr Order Fees — Egypt market, stocks and ETFs"
+publisher: "Thndr Securities Brokerage (FRA licence no. 804)"
+kind: BROKER_FEE_SCHEDULE
+
+file: "fees_egypt.txt"
+media_type: "text/plain"
+bytes: 2557
+sha256: "1517be194bc3fd016af0337bb914ec2569e0577635468f1ccdfc1648e1443840"
+
+# The date the schedule was read. The page itself gives no effective date,
+# only "Updated over 2 weeks ago", so the read date is the only date that can
+# be stated as fact. Fee schedules change; re-read before any live run.
+as_of: "2026-07-26"
+
+acquired:
+  at: "2026-07-26"
+  via: USER_TRANSCRIPTION
+  original_filename: null
+  # The user pasted the page text; this session could not open it — WebFetch
+  # returned 403 on this exact URL, re-tested 2026-07-26.
+  url: "https://support.thndr.app/en/support/solutions/articles/73000526829-egx-trading-fees"
+  url_verified: false
+
+used_by:
+  - "config/thresholds.yaml"
+  - "src/engine/portfolio.py"
+
+supersedes: null
+superseded_by: null
+
+notes: >
+  WEAKER PROVENANCE THAN A FILE. This is a transcription pasted into a chat,
+  not a downloaded document, so the bytes attest to what was pasted and not to
+  what the page served. It is admitted anyway, deliberately: ENGINE_SPEC §7.3
+  requires fees be verified against Thndr's published schedule before any live
+  run and forbids shipping guessed values, and the account holder reading their
+  own broker's published page is the best source available while egress is
+  blocked. It is also self-checking in a way a recalled figure never is — the
+  page carries its own worked example, and the engine reproduces it to the
+  piastre in tests/test_engine_portfolio.py.
+
+  WHY IT MATTERS BEYOND FILLING IN FOUR NUMBERS: the real schedule is
+  fixed-plus-percentage (2 EGP + 0.1%), a shape the engine's cost model could
+  not represent. The old model would have understated the cost of small trades
+  — the direction that lets the system recommend an economically destructive
+  trade. See decisions/0007.
+
+  A WebSearch snippet consulted before this arrived claimed the EGX fee was
+  "0.12 per thousand" (0.012%). The real figure is 0.01%. The snippet was
+  wrong, and it was never stored — which is the discipline working.
+
+  NOT MODELLED (deliberate, each recorded here so it is a known gap, not an
+  oversight):
+    * FRA fee is per TRANSACTION, not per order. One order can fill across
+      several counterparties and incur the 1 EGP minimum several times. The
+      engine assumes one transaction per order, so it UNDERSTATES cost for
+      orders that fill in fragments.
+    * Caps (5,000 EGP on EGX/MCDR/risk insurance, 250 EGP on FRA) are not
+      modelled. They only bind above roughly 50 million EGP of order value,
+      far beyond any position this portfolio will hold.
+    * MCDR annual custody fee (0.01% of portfolio value each 31 December) is a
+      holding cost, not a trade cost, and has no home in the engine yet.
+    * Thndr Trader subscription waives 50 commission orders a month. Not
+      modelled: the unsubscribed case is the conservative one.

@@ -58,7 +58,13 @@ outstanding *are* obtainable from the filings (ETEL: 1 707 071 600, note 26). **
 the five screens are blocked on price history, not on filings** — which was not obvious
 before the first real document.
 
-### 9. Universe provenance stops one link short
+### 9. FRA fee is modelled per order, but charged per transaction
+`engine/portfolio.trade_cost` assumes one order fills as one transaction. The FRA levy
+(0.005%, floor 1 EGP) is charged **per transaction**, and one order can fill across several
+counterparties. Consequence: trade cost is **understated** for fragmented fills — the unsafe
+direction. Accepted because fill count is unknowable in advance (`decisions/0007`).
+
+### 10. Universe provenance stops one link short
 `config/universe.yaml` attests to the exact bytes it was transcribed from (sha256, archived
 in-repo) but **not** to the URL those bytes came from — egress is blocked here, so the
 upload's chain of custody before it reached the session is unverified. Recorded honestly in
