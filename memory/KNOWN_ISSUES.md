@@ -64,7 +64,22 @@ before the first real document.
 counterparties. Consequence: trade cost is **understated** for fragmented fills — the unsafe
 direction. Accepted because fill count is unknowable in advance (`decisions/0007`).
 
-### 10. Universe provenance stops one link short
+### 10. Screen B may only be computable from a filing that is already stale
+Interest income was **not disclosed** in ETEL's condensed Q1-2026 (issue 7). The expectation
+is that the audited annual discloses it — untested. But `staleness_days` is 180, and an
+annual dated 31/12 passes that limit at the end of June. Checked against today
+(2026-07-26): **FY2025 is 207 days old → V10 marks it INSUFFICIENT.**
+
+So if interest income appears *only* in annuals, Screen B is computable for roughly half of
+each year and the company sits at `DATA_INSUFFICIENT` for the other half. That is safe, but
+it may make the gate unusable in practice.
+
+**Do not "fix" this by relaxing `staleness_days`.** The FY2025 report is the experiment
+that settles it: if the full annual notes do disclose interest income, the real question
+becomes whether a fresh interim balance sheet may be combined with an annual income
+disclosure — a spec question for `ENGINE_SPEC`, not a threshold to loosen (R4, R8).
+
+### 11. Universe provenance stops one link short
 `config/universe.yaml` attests to the exact bytes it was transcribed from (sha256, archived
 in-repo) but **not** to the URL those bytes came from — egress is blocked here, so the
 upload's chain of custody before it reached the session is unverified. Recorded honestly in
