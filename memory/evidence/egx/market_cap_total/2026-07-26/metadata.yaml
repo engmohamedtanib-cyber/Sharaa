@@ -1,0 +1,77 @@
+# Evidence record. Schema and admission rules: memory/evidence/README.md
+#
+# ####################################################################
+# THIS IS THE WHOLE MARKET. IT IS NOT ANY COMPANY.
+#
+# If you are looking for the denominator of Screens C, D or E, this is
+# NOT it, and using it would flip a breach into a comfortable pass.
+# Read `notes` before touching this file.
+# ####################################################################
+
+id: "egx/market_cap_total/2026-07-26"
+version: 1
+
+title: "EGX total market capitalisation — daily history, 2008-01-02 to 2026-07-26"
+publisher: "The Egyptian Exchange"
+kind: MARKET_AGGREGATE
+
+file: "mc_historical_data.xls"
+# Named .xls, actually HTML: a single <table> with two columns. Parsers that
+# trust the extension fail; `file(1)` reports "HTML document".
+media_type: "text/html"
+bytes: 612506
+sha256: "a516d1eac9b9d99ffbdebd385d4a6d409cb9f84a48db4bb7fe78418b9bbf2a29"
+
+# Last trade date in the series.
+as_of: "2026-07-26"
+
+acquired:
+  at: "2026-07-26"
+  via: USER_UPLOAD
+  original_filename: "MC_Historical_Data.xls"
+  # From the EGX site, Historical Statistics -> Market Cap. Data. Egress is
+  # blocked here, so this session did not fetch it.
+  url: null
+  url_verified: false
+
+used_by: []
+
+supersedes: null
+superseded_by: null
+
+notes: >
+  4 486 daily rows. Columns are exactly two: "Trade Date" and
+  "Market Cap. Total". THERE IS NO COMPANY COLUMN, because there is no
+  company — this is the aggregate capitalisation of the entire Egyptian
+  Exchange.
+
+  WHY IT IS RECORDED RATHER THAN DISCARDED: it was uploaded in answer to a
+  request for Telecom Egypt's market cap history, and it is the wrong series
+  in a way that is invisible unless the magnitude is checked. Keeping it,
+  labelled, is a permanent guard rail against the same mistake. Deleting it
+  would only mean someone downloads it again and reaches for it again.
+
+  THE NEAR MISS, WITH NUMBERS. On 2026-07-22 this file reads
+  3 951 140 876 406. Telecom Egypt on the same day is 1 707 071 600 shares
+  (note 26 of its Q1-2026 filing) at 103.28 = 176 306 354 848. The file is
+  22.4x the company. Screen C is interest-bearing debt over that denominator,
+  capped at 30%:
+
+    against the market total  : 76.11bn / 3 015bn avg = 2.5%  -> GREEN, huge headroom
+    against the company       : 76.11bn / 176.3bn     = 43%   -> breach
+
+  The wrong denominator does not produce a slightly wrong answer. It converts
+  a breach into a comfortable pass, which is the precise failure the Prime
+  Directive names. (Neither figure is a verdict: the convention requires a
+  trailing 12-month average, and 103.28 is a spot price from an unverified
+  paste.)
+
+  WHAT IS ACTUALLY NEEDED for Screens C/D/E: per-company market cap, or a
+  price series to multiply by shares outstanding. On the EGX site that is
+  Historical Statistics -> Stocks Data with the company selected, not
+  Market Cap. Data.
+
+  WHAT THIS IS LEGITIMATELY GOOD FOR: market-level context — breadth, an
+  equity-risk-premium input, or a sanity check that a company's capitalisation
+  is a plausible fraction of the exchange. No consumer today, hence
+  `used_by: []`.

@@ -78,6 +78,20 @@ rebalances, which is why Screens A–E run independently on every constituent
 rather than deferring to the index.
 > `decisions/0004` · `CLAUDE.md` R7
 
+## EGX site data — two traps
+
+**"Market Cap. Data" is the whole exchange, not a company.** The export has two
+columns, `Trade Date` and `Market Cap. Total`, and no company column. Per-company
+figures live under **Historical Statistics → Stocks Data** with a company
+selected. Reaching for the wrong one puts a denominator ~22x too large into
+Screens C/D/E, which turns a breach into a comfortable pass.
+> `egx/market_cap_total/2026-07-26` — the record carries the worked numbers
+
+**EGX "`.xls`" downloads are HTML.** `file(1)` reports "HTML document"; the
+payload is a single `<table>`. openpyxl and xlrd both fail on it. Parse it as
+HTML, not as a workbook.
+> Same record.
+
 ## Money and time
 
 All money is `Decimal` in EGP, stored `NUMERIC(20,2)`. Ratios are `Decimal`,
