@@ -1,0 +1,50 @@
+# Evidence record. Schema and admission rules: memory/evidence/README.md
+# This file is the ONLY authoritative description of the bytes beside it.
+
+id: "egx/shariah_index/2026-04-30"
+version: 1
+
+title: "EGX 33 Shariah Index — constituents and weights"
+publisher: "The Egyptian Exchange"
+kind: INDEX_CONSTITUENTS
+
+file: "constituents.xlsx"
+media_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+bytes: 11981
+sha256: "1ad43debdb1e626650837ac58a483f81bdccbad52b4ab04a75102c6d14b7470c"
+
+# What the document is ABOUT. Not when we got it — see `acquired.at`.
+# Taken from the workbook's own weight column header ("Weight as of 30/04/2026"),
+# parsed rather than assumed.
+as_of: "2026-04-30"
+
+acquired:
+  at: "2026-07-25"
+  via: USER_UPLOAD
+  original_filename: "EGX33ShariahIndexMay2026.xlsx"
+  # The URL is NULL and stays null until a fetch is actually performed whose
+  # hash matches the one above. Egress is blocked in this environment
+  # (decisions/0004), so this session did not visit egx.com.eg and cannot
+  # attest to where the bytes came from before they were uploaded.
+  # A plausible URL written here would be an unverified claim wearing the
+  # costume of provenance, which is worse than an honest null.
+  url: null
+  url_verified: false
+
+# Everything downstream that depends on these bytes. Kept current so the blast
+# radius of a corrected or superseded source is visible without a code search.
+# A test asserts every path here exists.
+used_by:
+  - "config/universe.yaml"
+  - "src/research/transcribers/transcribe_index.py"
+  - "src/engine/universe.py"
+
+supersedes: null
+superseded_by: null
+
+notes: >
+  34 data rows plus a totals row summing to 1. Columns: SYMBOL_CODE (Egyptian
+  ISIN), SYMB_NAME_ARB, SYMB_NAME_ENG, REUTERS_CODE (.CA RIC), and the weight
+  column carrying the as-of date. The 34 rows cover 33 issuers: Faisal Islamic
+  Bank of Egypt appears twice, in EGP (FAIT) and USD (FAITA), which is how an
+  index named for 33 companies reconciles to 34 listings (decisions/0005).

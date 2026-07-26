@@ -26,12 +26,22 @@ assume them — build the schema and the enforcement first; they are inputs, not
 
 ---
 
-## Done: M0 — the universe
+Before writing `engine/policy.py`, read `checklists/SESSION_END.md` once — it is the
+discipline that keeps this file worth reading.
 
-`config/universe.yaml` is `POPULATED`: 34 listings / 33 issuers, script-transcribed from an
-archived workbook, with `engine/universe.py` refusing to load anything unpopulated. See
-`decisions/0005`. Do not hand-edit the constituent list — re-run
-`research/transcribe_universe.py` when the next rebalance export arrives.
+---
+
+## Done: M0 — the universe, and the memory substrate
+
+`config/universe.yaml` is `POPULATED`: 34 listings / 33 issuers, script-transcribed from
+evidence record `egx/shariah_index/2026-04-30`, with `engine/universe.py` refusing to load
+anything unpopulated (`decisions/0005`). Do not hand-edit the constituent list — follow
+`checklists/INDEX_REBALANCE.md`.
+
+The memory system was then completed before starting M2 (`decisions/0006`): `knowledge/`
+now exists (`BRAIN.md` had been routing to a directory that was never created),
+`memory/evidence/` is a registry whose hashes are recomputed from the bytes on every test
+run, and `checklists/` holds the recurring procedures.
 
 ---
 

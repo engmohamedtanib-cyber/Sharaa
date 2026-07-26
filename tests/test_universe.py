@@ -298,7 +298,21 @@ def test_faisal_islamic_bank_is_one_issuer_in_two_currencies(real):
 
 def test_shipped_provenance_is_recorded(real):
     assert real.retrieved.sha256 == "1ad43debdb1e626650837ac58a483f81bdccbad52b4ab04a75102c6d14b7470c"
-    assert "EGX33-SHARIAH_constituents_2026-05.xlsx" in real.retrieved.source
+    assert real.retrieved.evidence_id == "egx/shariah_index/2026-04-30"
+
+
+def test_shipped_provenance_resolves_to_a_verified_evidence_record(real):
+    """The pointer is not decorative: it resolves, and resolving it recomputes
+    the digest from the bytes on disk. Cross-layer, so it lives here as well as
+    in tests/test_evidence.py — this is the direction that matters, config
+    claiming an evidence record that must actually exist and match."""
+    from store.evidence import find
+
+    assert find(real.retrieved.evidence_id).sha256 == real.retrieved.sha256
+
+
+def test_evidence_id_is_optional_in_the_schema():
+    assert parse_universe(doc()).retrieved.evidence_id is None
 
 
 def test_every_shipped_sector_is_null(real):

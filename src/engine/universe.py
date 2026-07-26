@@ -83,6 +83,9 @@ class Provenance:
     source: str
     by: str
     sha256: str | None = None
+    #: Id of the record in ``memory/evidence/``. The durable pointer — the file
+    #: path can move, the registry entry cannot (``memory/evidence/README.md``).
+    evidence_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -137,11 +140,13 @@ def _require_provenance(raw: dict[str, Any]) -> Provenance:
     if missing:
         raise UniverseIntegrityError(f"populated universe is missing provenance: {', '.join(missing)} (CLAUDE.md R1)")
     sha = block.get("sha256")
+    evidence_id = block.get("evidence_id")
     return Provenance(
         at=str(block["at"]),
         source=str(block["from"]),
         by=str(block["by"]),
         sha256=None if sha is None else str(sha),
+        evidence_id=None if evidence_id is None else str(evidence_id),
     )
 
 

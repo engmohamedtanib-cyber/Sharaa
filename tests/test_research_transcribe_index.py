@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from research.transcribe_universe import (
+from research.transcribers.transcribe_index import (
     EXPECTED_HEADERS,
     SourceRow,
     TranscriptionError,
@@ -26,7 +26,7 @@ from research.transcribe_universe import (
     ticker_of,
 )
 
-SOURCE = "memory/sources/EGX33-SHARIAH_constituents_2026-05.xlsx"
+SOURCE = "memory/evidence/egx/shariah_index/2026-04-30/constituents.xlsx"
 SHA256 = "1ad43debdb1e626650837ac58a483f81bdccbad52b4ab04a75102c6d14b7470c"
 
 HEADER = (*EXPECTED_HEADERS, "Weight as of 30/04/2026")

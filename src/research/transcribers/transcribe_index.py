@@ -15,8 +15,8 @@ never imports.
 
 Usage::
 
-    uv run --extra research python -m research.transcribe_universe \\
-        memory/sources/EGX33-SHARIAH_constituents_2026-05.xlsx
+    uv run --extra research python -m research.transcribers.transcribe_index \\
+        memory/evidence/egx/shariah_index/2026-04-30/constituents.xlsx
 """
 
 from __future__ import annotations

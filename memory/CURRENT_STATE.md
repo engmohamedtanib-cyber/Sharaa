@@ -1,6 +1,6 @@
 # CURRENT_STATE.md
 
-**Updated:** 2026-07-25 · **Suite:** 671 tests green · ruff clean · mypy --strict on 5 layers
+**Updated:** 2026-07-26 · **Suite:** 709 tests green · ruff clean · mypy --strict on 5 layers
 
 Rewrite this file at the end of every working session. It is the first thing a future
 session reads. Keep it short and true.
@@ -26,17 +26,36 @@ session reads. Keep it short and true.
 | `ingestion/extract.py` | Dual-pass prompt contract + strict parsing | Contract only — never run on a real filing |
 | `ingestion/acquire.py` | Hash, dedupe, scanned detection | Logic only — never downloaded anything |
 | `ingestion/reconcile.py` | Dual-pass agreement, §3.2/§3.3 gates | High |
-| `research/transcribe_universe.py` | Constituents export → `config/universe.yaml` | High — round-trips against the archived workbook |
+| `research/transcribers/transcribe_index.py` | Constituents export → `config/universe.yaml` | High — round-trips against the archived workbook |
+| `store/evidence.py` | Evidence registry; recomputes every hash from bytes | High — 100% branch |
 | `reporting/journal.py` | Decision journal, falsifiability enforced | High |
 | `reporting/order_sheet.py` | Limit-only orders (market unrepresentable) | High |
 | `store/jsonl_ledger.py` | Git-native append-only ledger persistence | High |
 
-## The universe is now populated (M0 done)
+## The memory system (decisions/0006)
 
-`config/universe.yaml` — **34 listings, 33 issuers**, transcribed by script from
-`memory/sources/EGX33-SHARIAH_constituents_2026-05.xlsx`
-(sha256 `1ad43de…4470c`, weights as of 2026-04-30). Do not hand-edit it; re-run
-`research/transcribe_universe.py` at the next rebalance. Full rationale: `decisions/0005`.
+`BRAIN.md` routed to `knowledge/`, which had never been created — the link was dead.
+Fixed, and the substrate around it completed before starting a new module:
+
+| Where | What |
+|---|---|
+| `memory/evidence/<publisher>/<series>/<as_of>/` | one dir per source item + `metadata.yaml` |
+| `store/evidence.py` | resolves an id, **recomputes the hash from the bytes**, raises on mismatch |
+| `knowledge/` | verified domain facts, every one carrying a citation |
+| `checklists/` | `NEW_EVIDENCE`, `INDEX_REBALANCE`, `SESSION_END` |
+| `tests/golden/README.md` | the golden-set contract. Set is still **empty**. |
+
+`tests/test_evidence.py` walks every committed record and re-digests it on every run,
+so a hash in a YAML file is a claim that is checked rather than merely stated. There is
+deliberately **no `sha256.txt` sidecar** — a hash in two places is a hash that can
+disagree with itself.
+
+## The universe is populated (M0 done)
+
+`config/universe.yaml` — **34 listings, 33 issuers**, transcribed by script from evidence
+record `egx/shariah_index/2026-04-30` (sha256 `1ad43de…4470c`, weights as of 2026-04-30).
+Do not hand-edit it; follow `checklists/INDEX_REBALANCE.md` at the next rebalance.
+Full rationale: `decisions/0005`.
 
 Three things about it a future session must not undo:
 

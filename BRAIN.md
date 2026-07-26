@@ -22,7 +22,10 @@ no benefit. Load in layers, on demand:
 | On demand | `docs/ARCHITECTURE_V2.md` | only when a structural question arises |
 | On demand | `docs/ROADMAP_V1.md` | when planning the next milestone |
 | On demand | `decisions/NNNN-*.md` | when you want to know *why* something is the way it is |
+| On demand | `knowledge/*.md` | before relying on any EGX convention — check it, don't recall it |
+| On demand | `checklists/*.md` | before a recurring procedure (new evidence, rebalance, ending a session) |
 | On demand | `examples/*.md` | when performing that specific task |
+| On demand | `memory/evidence/README.md` | when admitting a source document |
 | Never | `docs/BUILD_SPEC.md`, `docs/START_HERE.md` | historical; superseded by ARCHITECTURE_V2 + ROADMAP_V1 |
 
 **Rule:** if the code already encodes a rule and has tests, trust the code and the tests.
@@ -120,13 +123,15 @@ memory/               ← dynamic state, updated every session
   KNOWN_ISSUES.md       open defects and their status
   FUTURE_PROPOSALS.md   ideas deferred past V1 (do not implement these)
   portfolio/            the live portfolio, as append-only JSONL
-  sources/              archived source documents, cited by hash from config/
+  evidence/             every source document + metadata.yaml, verified by hash
 decisions/            ← why we did things this way (ADRs). Append-only.
-knowledge/            ← distilled operational rules (see §0 for when to read)
-examples/             ← recipes for recurring tasks
+knowledge/            ← distilled domain facts, every one carrying a citation
+checklists/           ← recurring procedures: new evidence, rebalance, session end
+examples/             ← playbooks for recurring tasks
 docs/                 ← full specifications (heavy; load on demand)
 src/                  ← the deterministic engine + ingestion + reporting
-tests/                ← 671 tests. If these are green, the rules are intact.
+tests/                ← 709 tests. If these are green, the rules are intact.
+tests/golden/         ← hand-verified filings. EMPTY — extraction is unproven.
 config/               ← every threshold, versioned. Never hardcode a number.
 ```
 
