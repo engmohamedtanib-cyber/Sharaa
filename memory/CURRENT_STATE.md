@@ -1,6 +1,9 @@
 # CURRENT_STATE.md
 
-**Updated:** 2026-07-27 · **Suite:** 753 tests green · ruff clean · `mypy --strict` on 8 layers
+**Updated:** 2026-07-27 · **Suite:** 781 green + 2 skipped · ruff clean · `mypy --strict` on 9 layers
+
+The 2 skips are the golden-set gate reporting that extraction accuracy is UNKNOWN. That
+is the honest state, and it is meant to stay visible in every run until real filings land.
 
 Rewrite this file at the end of every working session. It is the first thing a future
 session reads. Keep it short and true.
@@ -34,6 +37,9 @@ session reads. Keep it short and true.
 | `tools/` | **NEW** — 18 typed tools, audited, idempotent writes, MCP stdio server | High — refusals tested |
 | `research/` | **NEW** — source protocols, registry, retry, market derivations, discovery | Logic only — no live source exists |
 | `routines/` | **NEW** — daily poll, market refresh, weekly digest, quarterly review | High — idempotency tested |
+| `ingestion/intake.py` | **NEW** — identifies uploaded filings, dedupes by content hash, computes golden-set coverage | High |
+| `tests/test_golden_set.py` | **NEW** — the M6 gate; harness tested, set empty (skips saying UNKNOWN) | High |
+| `cli.py` | `universe` · `intake` · `tools` · `routine` commands added | High |
 | `config/cio_persona.md` | **NEW** — the conversation contract, versioned like a threshold file | n/a |
 
 ## What is NOT built

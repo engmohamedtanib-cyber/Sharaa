@@ -61,6 +61,23 @@ a directory of uploaded PDFs.
 
 ---
 
+## The intake path is ready — use it, do not rebuild it
+
+When files arrive tomorrow, the workflow already exists. Follow
+`examples/CollectAndIngestFilings.md` rather than improvising:
+
+```bash
+egx universe                 # is screening possible yet?
+egx intake filings/inbox     # identify uploads, dedupe, show golden-set coverage
+pytest tests/test_golden_set.py -v
+```
+
+`ingestion/intake.py` parses `TICKER_FYyyyy_PERIOD.pdf`, hashes, dedupes by content and
+reports what it could not identify. The golden harness is tested; only the filings are
+missing.
+
+---
+
 ## Blocked on the user
 
 1. **The EGX33 Shariah constituent list** (M0) — a screenshot.
