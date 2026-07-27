@@ -64,14 +64,41 @@ run, and `checklists/` holds the recurring procedures.
 
 ## Blocked on the user
 
+- **ETEL FY2025 audited annual report** (EAS consolidated, from
+  ir.te.eg → Financial Information → Financial Statements → 2025). Closes both open
+  points on the ETEL run: capital at 31/12/2024 and 31/12/2025 settles the share count,
+  and the full — not condensed — notes are where interest income should appear.
+  If the annual does not disclose it either, Screen B is structurally uncomputable for
+  this company and that is itself the finding.
+- **A second constituent to screen**: its most recent audited annual report, plus 12
+  months of daily closes. Same two inputs that worked for ETEL. Prefer a company whose
+  answer is not obviously predetermined — not another heavily indebted infrastructure name.
 - **Sector classification for the 33 issuers.** Every `sector` is `null`; the constituents
   export has no sector column. Until a primary source is opened, the sector concentration
   cap in `engine/portfolio.py` has nothing to bite on. A screenshot of the EGX or Mubasher
   sector listing is enough. **Do not fill these from recall** (`decisions/0005`).
-- **Where the price list came from.** The user pasted 34 EGX quotes dated 22/07 alongside
-  the workbook; it does not match the index (10 non-constituents, 10 constituents missing)
-  and nothing from it was stored. Ask before treating any of it as market data.
-- **1–3 real filing PDFs** for companies in the index (M5 golden set). Prefer the most
-  recent annual report of a company they might actually hold.
 
-Nothing else is blocked. No credentials are needed anywhere in V1.
+## Not blocked, and already answered
+
+- **Filings.** ETEL Q1-2026 consolidated + standalone arrived and are registered. Their
+  **PDF bytes are gitignored**, so a fresh container will not have them — but the
+  hand-read values live in `tests/golden/ETEL/2026-Q1/expected.yaml` with page citations,
+  and the metadata carries each file's sha256, so a re-upload can be verified as
+  byte-identical rather than merely assumed to be the same document.
+- **Price history.** 244 daily closes are committed as a plain TSV
+  (`stockanalysis/etel_daily_close/2026-07-22`) and survive any clone.
+- **Broker fees.** Verified and in `config/thresholds.yaml` v1.1.0.
+- **The stray 34-name price list** pasted on 2026-07-25 was never stored and needs no
+  follow-up; the real per-company series superseded it.
+
+No credentials are needed anywhere in V1.
+
+## How to resume in a fresh session
+
+Say: *"اقرا BRAIN.md و memory/CURRENT_STATE.md و memory/NEXT_TASK.md وكمّل"*.
+That is exactly how the 2026-07-25/26 session started, and it worked — which is the
+only real test this handoff has.
+
+Branch: `claude/read-files-complete-task-7lypvv`.
+First command worth running: `uv run pytest -q` (expect 750) and
+`uv run python -m consistency`.
