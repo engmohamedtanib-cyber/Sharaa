@@ -1,0 +1,131 @@
+# =====================================================================
+# config/ips_schema.yaml
+# ---------------------------------------------------------------------
+# The SHAPE of an Investment Policy Statement, and the rules that govern
+# it. This file is documentation-with-teeth: every rule below is enforced
+# in `engine/policy.py` and tested. It is not itself loaded as a policy.
+#
+# The live mandate is `config/ips.yaml`.
+#
+# THE ONE RULE THAT MATTERS
+#   A policy may only ever TIGHTEN. It narrows what the engine is allowed
+#   to do; it can never widen it. Any field that would raise a cap, lower
+#   the cash floor, or switch off the Shariah gate is rejected at load —
+#   not warned about, rejected.
+#
+#   Corollary: there is deliberately NO `allowed_tickers` field. A
+#   whitelist is an admission mechanism, and admission belongs to the
+#   Shariah gate alone (CLAUDE.md R7).
+# =====================================================================
+
+version: "1.0.0"   # schema version, not policy version
+
+fields:
+
+  version:
+    type: integer
+    required: true
+    rules:
+      - ">= 1"
+      - "strictly increases; an existing version is never edited in place (R5)"
+
+  effective_from:
+    type: string (ISO date)
+    required: false
+    note: "Supplied at the boundary. The engine never reads a clock."
+
+  objective:
+    type: string
+    required: false
+    note: "Plain language. What the user hired the CIO to achieve."
+
+  horizon_years:
+    type: integer
+    default: 5
+    rules: [">= 1"]
+
+  base_currency:
+    type: string
+    default: "EGP"
+    rules: ["must be EGP — the system prices, screens and reports in EGP only"]
+
+  monthly_contribution:
+    type: decimal
+    required: false
+    rules: [">= 0"]
+
+  limits:
+    type: mapping
+    note: "Each limit is compared to config/thresholds.yaml. Tighter wins; looser is rejected."
+    fields:
+      max_single_position:
+        compared_to: "portfolio.constraints.max_single_position"
+        direction: "policy value must be <= engine limit"
+      max_single_sector:
+        compared_to: "portfolio.constraints.max_single_sector"
+        direction: "policy value must be <= engine limit"
+      cash_reserve_min:
+        compared_to: "portfolio.constraints.cash_reserve_min"
+        direction: "policy value must be >= engine floor (more cash is the safe side)"
+      max_holdings:
+        compared_to: "portfolio.constraints.max_holdings"
+        direction: "policy value must be <= engine cap"
+
+  exclusions:
+    type: mapping
+    note: |
+      Personal exclusions beyond the Shariah gate. Subtractive only.
+      Every exclusion carries a reason — an exclusion nobody can review
+      later silently becomes permanent.
+    fields:
+      tickers:
+        type: list of {key, reason, added_in_version}
+        note: "key is the EGX code, upper-cased."
+      sectors:
+        type: list of {key, reason, added_in_version}
+        note: "key matches the sector string on the constituent, case-insensitively."
+
+  rescinds:
+    type: list of string
+    note: |
+      Exclusions deliberately lifted in this version. Dropping an
+      exclusion without naming it here is refused at supersession: a
+      company the user once refused to own must not walk back into a
+      plan with no decision behind it.
+
+  require_shariah_gate:
+    type: boolean
+    default: true
+    rules:
+      - "MUST be true. Rejected at load otherwise (R7). Not negotiable by mandate."
+
+  accept_amber:
+    type: boolean
+    default: true
+    note: |
+      AMBER = within Shariah limits but close to one. Setting this false
+      is a tightening (the user refuses near-limit companies) and is
+      allowed. There is no corresponding switch to accept RED — that
+      would be a loosening and no field exists for it.
+
+  note:
+    type: string
+    required: false
+
+# ---------------------------------------------------------------------
+# Supersession rules (engine/policy.py::validate_supersession)
+# ---------------------------------------------------------------------
+supersession:
+  - "new.version > old.version"
+  - "exclusions are additive; any dropped exclusion must appear in new.rescinds"
+  - "old versions are retained forever; every decision records the version in force"
+
+# ---------------------------------------------------------------------
+# What is NOT policy
+# ---------------------------------------------------------------------
+not_policy:
+  note: |
+    If it does not change a DECISION, it is not policy — it is
+    presentation, and it belongs in config/cio_persona.md. Tone,
+    language, report frequency, how much detail to show: all persona.
+    Caps, exclusions, horizon, contribution: all policy.

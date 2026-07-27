@@ -14,6 +14,8 @@ from typing import Any
 import yaml
 
 from engine.config import Thresholds
+from engine.policy import InvestmentPolicy, parse_policy
+from engine.universe import Universe, parse_universe
 
 # Repo root = parent of src/.
 _ROOT = Path(__file__).resolve().parent.parent
@@ -51,3 +53,28 @@ def load_prohibited_activities(path: str | None = None) -> dict[str, Any]:
 def load_sources(path: str | None = None) -> dict[str, Any]:
     p = Path(path) if path else CONFIG_DIR / "sources.yaml"
     return _read_yaml(p)
+
+
+@lru_cache(maxsize=1)
+def load_universe(path: str | None = None) -> Universe:
+    """Load ``config/universe.yaml``.
+
+    Loading always succeeds; *using* an unpopulated universe is what raises
+    (:meth:`engine.universe.Universe.require_available`). Keeping the two apart
+    means a caller can ask "is the universe ready?" without handling an
+    exception, while a caller who forgets to ask cannot silently screen zero
+    companies and report the result as an answer.
+    """
+    p = Path(path) if path else CONFIG_DIR / "universe.yaml"
+    return parse_universe(_read_yaml(p))
+
+
+@lru_cache(maxsize=1)
+def load_policy(path: str | None = None) -> InvestmentPolicy:
+    """Load ``config/ips.yaml`` and validate it against the engine's own limits.
+
+    A policy that would loosen a constitutional limit raises here, at load, so a
+    rejected mandate can never be the one a decision was made under.
+    """
+    p = Path(path) if path else CONFIG_DIR / "ips.yaml"
+    return parse_policy(_read_yaml(p), load_thresholds())

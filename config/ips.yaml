@@ -1,0 +1,44 @@
+# =====================================================================
+# config/ips.yaml — the live Investment Policy Statement
+# ---------------------------------------------------------------------
+# Shape and rules: config/ips_schema.yaml
+# Enforcement:     src/engine/policy.py
+#
+# This is version 1: the default mandate, in force until the user states
+# their own. It deliberately adds nothing and removes nothing, so the
+# system's behaviour under "no stated policy" is identical to its
+# behaviour under the engine's own limits.
+#
+# To change it: add a NEW version block below with a higher `version`,
+# never edit this one. `validate_supersession` enforces that exclusions
+# only ever accumulate unless explicitly rescinded.
+# =====================================================================
+
+version: 1
+effective_from: null      # set when the user states their mandate
+objective: "Preserve and grow capital in Shariah-compliant EGX equities."
+horizon_years: 5
+base_currency: "EGP"
+monthly_contribution: null
+
+# Every limit left null inherits the engine limit from
+# config/thresholds.yaml. Setting one may only tighten it.
+limits:
+  max_single_position: null
+  max_single_sector: null
+  cash_reserve_min: null
+  max_holdings: null
+
+exclusions:
+  tickers: []
+  sectors: []
+
+rescinds: []
+
+require_shariah_gate: true    # constitutional (R7) — a false value is rejected at load
+accept_amber: true            # set false to refuse companies close to a Shariah limit
+
+note: >-
+  Default mandate. The user has not yet stated capital, contribution rhythm,
+  horizon or personal exclusions in a recorded conversation. Until they do,
+  the engine's own constraints are the whole policy.

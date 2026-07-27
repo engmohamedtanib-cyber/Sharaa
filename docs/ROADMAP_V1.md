@@ -196,19 +196,40 @@ Dependency-first, credential-last, and *trust-building last*:
 
 ---
 
-## Current status
+## Current status (updated 2026-07-27)
 
-- **M1: ✅ complete.** `engine/ledger.py` (100% branch, 75 tests) +
-  `store/jsonl_ledger.py` (100% branch, 21 tests) + `db/schema_v2_ledger.sql`.
-  Cash is a fold · unpayable buys and unheld sales refused · splits/bonus preserve
-  cost basis · illegal order transitions rejected · replay byte-identical ·
-  ledger persists to git as diffable JSONL with exact decimals.
-- **M1.5: ✅ complete.** Knowledge architecture: `BRAIN.md` (loading router),
-  `memory/` (5 state files), `decisions/` (3 ADRs), `examples/` (2 recipes).
-  A future session resumes from `BRAIN.md` + `memory/` alone.
-- **M2: next** — Investment Policy Statement. See `memory/NEXT_TASK.md`.
-- M3, M5–M8: queued. M4 removed (see above).
-- Blocked on user: real filing PDFs only. **No credentials needed for anything else.**
+- **M1: ✅ complete.** `engine/ledger.py` (100% branch) + `store/jsonl_ledger.py` +
+  `db/schema_v2_ledger.sql`. Cash is a fold · unpayable buys and unheld sales refused ·
+  splits/bonus preserve cost basis · illegal order transitions rejected · replay
+  byte-identical.
+- **M1.5: ✅ complete.** Knowledge architecture: `BRAIN.md`, `memory/`, `decisions/`,
+  `examples/`. A future session resumes from `BRAIN.md` + `memory/` alone.
+- **M0 infrastructure: ✅ complete** (the *data* is still missing, deliberately).
+  `engine/universe.py` parses the universe and **refuses** an unpopulated one rather
+  than returning an empty list. A partial transcription is refused at parse time.
+- **M2: ✅ complete.** `engine/policy.py` + `config/ips_schema.yaml` + `config/ips.yaml`.
+  Tighten-only against `thresholds.yaml` · `require_shariah_gate` cannot be false (R7) ·
+  no whitelist field exists · exclusions additive unless explicitly rescinded · every
+  decision records the policy version.
+- **M3: ✅ complete.** `src/tools/` — 18 typed tools over the existing engine, an
+  append-only audit log, idempotent writes keyed by `request_id`, and a dependency-free
+  MCP stdio server. The propose → confirm → ledger loop works end to end on real files.
+  No tool accepts a figure the model originated: user-reported writes require `verbatim`.
+- **M5: 🟡 structure complete, no live adapter possible here.** `src/research/` — source
+  protocols, per-company registry, bounded retry with injected sleep, trailing-average
+  market cap (raises rather than averaging a short window), idempotent filing discovery.
+  The only adapters that exist are the honest ones: `Blocked*` (raises with the 403
+  reason) and `UploadedFilingDiscovery` (a directory of uploaded PDFs).
+- **M7: ✅ complete.** `src/routines/` — daily filing poll, daily market refresh, weekly
+  digest, quarterly review. One run per routine per day, enforced through the audit log
+  so a restart does not re-announce yesterday's news. The quiet-week message is sent, not
+  skipped; a source that could not be reached is always reported.
+- **M8: ✅ complete.** `config/cio_persona.md`, versioned like a threshold file.
+- **M6: blocked on real filings.** See `docs/DATA_REQUEST.md` for the exact request.
 
-Suite: 590 tests, ruff clean, `mypy --strict` across engine/validation/ingestion/
-reporting/store (31 files).
+Suite: **753 tests**, ruff clean, `mypy --strict` across engine/validation/ingestion/
+reporting/store/tools/research/routines.
+
+**Blocked on the user, in priority order:** the EGX33 Shariah constituent list · Thndr's
+fee schedule (four numbers) · 2–3 real filing PDFs · their mandate. All four are written
+up with links in `docs/DATA_REQUEST.md`. No credentials are needed for anything.

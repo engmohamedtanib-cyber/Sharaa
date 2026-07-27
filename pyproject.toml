@@ -43,6 +43,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = [
     "src/research",
+    "src/routines",
+    "src/tools",
+    "src/store",
     "src/ingestion",
     "src/validation",
     "src/engine",
@@ -82,6 +85,10 @@ ignore = []
 "tests/test_ingestion_normalise.py" = ["RUF001", "RUF002", "RUF003"]
 # The CLI's `normalise` command demonstrates those same characters.
 "src/cli.py" = ["RUF001"]
+# `ToolRefusal` is deliberate vocabulary, not a naming slip: a refusal is the
+# system declining under a rule, which the agent must relay rather than retry.
+# Renaming it to `ToolRefusalError` would blur it into the malformed-call case.
+"src/tools/errors.py" = ["N818"]
 
 # ----------------------------------------------------------------------
 # Mypy — strict on the deterministic layers (CLAUDE.md §5)
@@ -98,7 +105,7 @@ mypy_path = "src"
 [[tool.mypy.overrides]]
 # CLAUDE.md §5 requires strict on engine/ and validation/. ingestion/ and
 # reporting/ meet it too, so they are held to it to prevent regression.
-module = ["engine.*", "validation.*", "ingestion.*", "reporting.*", "store.*"]
+module = ["engine.*", "validation.*", "ingestion.*", "reporting.*", "store.*", "tools.*", "research.*", "routines.*"]
 strict = true
 
 [[tool.mypy.overrides]]

@@ -124,9 +124,20 @@ decisions/            ← why we did things this way (ADRs). Append-only.
 knowledge/            ← distilled operational rules (see §0 for when to read)
 examples/             ← recipes for recurring tasks
 docs/                 ← full specifications (heavy; load on demand)
-src/                  ← the deterministic engine + ingestion + reporting
-tests/                ← 569 tests. If these are green, the rules are intact.
+  DATA_REQUEST.md       everything still needed from the user, with links
+src/
+  engine/               deterministic screening, scoring, decisions, ledger, policy, universe
+  validation/           V1–V10, no LLM, no I/O
+  ingestion/            normalise, periods, extract contract, acquire, reconcile
+  reporting/            journal, order sheet
+  store/                append-only JSONL: ledger, orders, decisions
+  tools/                the typed tool API + MCP stdio server (the only door in)
+  research/             external-source protocols, registry, retry, market derivations
+  routines/             daily poll, market refresh, weekly digest, quarterly review
+tests/                ← 753 tests. If these are green, the rules are intact.
 config/               ← every threshold, versioned. Never hardcode a number.
+  cio_persona.md        how the agent speaks and what it refuses to say
+  ips.yaml              the investment mandate in force (tighten-only)
 ```
 
 ---
@@ -136,7 +147,11 @@ config/               ← every threshold, versioned. Never hardcode a number.
 The deterministic core is complete and tested: Shariah screening, 100-point scoring,
 decisions, watchlists, portfolio construction, purification, validation V1–V10, ingestion
 normalisation/extraction contracts, reporting, and an event-sourced portfolio ledger.
-**Not yet live:** real filing data, market prices, macro data.
+On top of it: the investment policy layer, the typed tool API with its MCP server, the
+research protocols, the scheduled routines, and the CIO persona.
+**Not yet live:** real filing data, market prices, macro data — and the universe itself,
+which is empty and *refuses* to be treated as "nothing is compliant".
+What is needed to make it live is listed, with links, in `docs/DATA_REQUEST.md`.
 
 Full detail: `memory/CURRENT_STATE.md`. Do not duplicate it here.
 

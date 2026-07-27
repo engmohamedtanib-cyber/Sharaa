@@ -4,48 +4,69 @@ One task. Not a backlog. When it is done, replace this file with the next one.
 
 ---
 
-## Now: M0 — populate the investable universe
+## Now: M0 — populate the investable universe (still blocked on the user)
 
-`config/universe.yaml` exists but `constituents: []` is **empty on purpose**.
+`config/universe.yaml` has `constituents: []` **on purpose**. Everything else that
+could be built without it now is.
 
-**Task:** transcribe the EGX 33 Shariah Index constituent list from a primary source into
-`config/universe.yaml`, then set the `retrieved` block (date, URL, who).
+**Task:** transcribe the EGX 33 Shariah Index constituent list from a primary source
+into `config/universe.yaml`, then set the `retrieved` block (date, URL, who) and flip
+`status` to `POPULATED`.
 
 **The rule that governs this task:** never fill this list from memory or recall. Every
-ticker must be read off a source that is open in front of you. Putting a company into a
-halal universe on no evidence is the exact failure this project exists to prevent
-(`CLAUDE.md` Prime Directive, R3). If you cannot open a source, leave it empty and say so.
+ticker must be read off a source open in front of you. Putting a company into a halal
+universe on no evidence is the exact failure this project exists to prevent
+(`CLAUDE.md` Prime Directive, R3).
+
+**What changed this session:** the refusal is now enforced in code.
+`engine/universe.py` raises `UniverseUnavailableError` rather than returning an empty
+list, `parse_universe` refuses a partial transcription (33 declared, 30 transcribed),
+and every tool that would screen relays the reason instead of reporting zero results.
+So this task is now genuinely the only thing between the system and a live screening run.
 
 **How to get it, in order of preference**
-1. The user pastes or uploads the list (screenshot, CSV, or copied text).
-2. A session with working network access fetches
+1. The user pastes or uploads the list — a screenshot is enough.
+2. A session with network access fetches
    `https://www.egx.com.eg/en/currentindexconstituntes.aspx?type=22&nav=22`.
-   ⚠️ In the current sandbox this returns **403** — see `decisions/0004`.
+   ⚠️ 403 in this sandbox, along with every other host.
 3. Mubasher or Investing.com constituent pages (also 403 here).
+
+Full request, with every alternative source and what each one gives:
+**`docs/DATA_REQUEST.md` §1.**
 
 **Definition of done**
 - 33 tickers with names (AR/EN where available) and sector
 - `retrieved.at` and `retrieved.from` filled in
-- `status` changed from `AWAITING_CONSTITUENTS` to `POPULATED`
-- A loader + test proving the engine refuses to run against an empty universe rather than
-  treating it as "no compliant companies"
+- `status` changed to `POPULATED`
+- `tests/test_engine_universe.py` updated: it currently asserts the *shipped* file
+  refuses, which will no longer be true — move that assertion onto a fixture and add
+  one that the real file now loads and screens
 
 ---
 
-## Then: M2 — Investment Policy Statement
+## Then: M6 — the golden set
 
-Build `engine/policy.py` + `config/ips_schema.yaml`. Versioned, append-only, and it may
-only **add** exclusions — a policy that would admit a gate-failing company is rejected at
-load (R7). Full brief in `docs/ROADMAP_V1.md` M2.
+Blocked on the same person for a different reason: it needs 15 real filings with the
+composition in `docs/DATA_REQUEST.md` §2. Nothing about extraction accuracy is knowable
+until it exists, and until it passes at ≥99% on the 12 critical line items the agent
+should screen and explain but not open a position on freshly extracted data.
 
-M2 needs nothing external and can proceed in parallel if M0 is blocked on the user.
+## Then: M5 live adapters — blocked only by the environment
+
+`research/` has the protocols, the source registry, the retry policy, the market
+derivations and the discovery orchestration, all tested offline. What is missing is an
+adapter that reaches a real source, which no code change in this sandbox can provide.
+Write it in an environment with network access, or drive `UploadedFilingDiscovery` over
+a directory of uploaded PDFs.
 
 ---
 
 ## Blocked on the user
 
-- **The EGX33 Shariah constituent list** (M0) — a screenshot or copy-paste is enough.
-- **1–3 real filing PDFs** for companies in that list (M5 golden set). Prefer the most
-  recent annual report of a company they might actually hold.
+1. **The EGX33 Shariah constituent list** (M0) — a screenshot.
+2. **Thndr's fee schedule** — four numbers; unblocks all order sizing.
+3. **2–3 real filing PDFs** for companies they might actually hold (M6).
+4. **Their mandate** — capital, contribution, horizon, exclusions → `config/ips.yaml` v2.
 
-Nothing else is blocked. No credentials are needed anywhere in V1.
+`docs/DATA_REQUEST.md` is written for them, with links. Nothing else is blocked, and no
+credentials are needed anywhere in V1.

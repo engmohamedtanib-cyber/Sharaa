@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from tools.data import CompanyFacts
 
 from config_loader import load_thresholds
 from engine.config import Thresholds
@@ -28,6 +33,28 @@ from engine.types import (
 
 def D(x: str) -> Decimal:
     return Decimal(x)
+
+
+@pytest.fixture()
+def clean_company() -> CompanyFacts:
+    """A gate-passing company with validated figures, for tool-layer tests.
+
+    Deliberately a *fixture*, never a fallback: the tool layer's default provider
+    has no data at all, and tests that assert refusals rely on that.
+    """
+    from tools.data import CompanyFacts  # local import: tests/ only, keeps engine tests dependency-free
+
+    inputs = strong_inputs()
+    market = replace(inputs.market, mcap_avg_12m=D("2400"))
+    return CompanyFacts(
+        ticker="AAAA",
+        sector="Materials",
+        inputs=replace(inputs, market=market),
+        core_prohibited=False,
+        filing_age_days=30,
+        period_label="FY2025",
+        source_note="fixture, not a real filing",
+    )
 
 
 @pytest.fixture(scope="session")
