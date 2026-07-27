@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 
-from config_loader import load_thresholds
+from config_loader import load_thresholds, load_universe
 from db.repo import get_repository
 from engine.decisions import DecisionContext, decide
 from engine.scoring import assert_pillar_maxima, score_company
@@ -33,6 +35,7 @@ from engine.types import (
     Timeliness,
     Valuation,
 )
+from ingestion.intake import IntakeError, missing_summary, scan_directory
 from ingestion.normalise import NormalisationError, detect_scale, parse_number
 from reporting.journal import entry_from_decision, render_journal
 from reporting.order_sheet import build_order, render_order_sheet
@@ -240,6 +243,95 @@ def cmd_review(args: argparse.Namespace) -> int:
     return 0 if args.dry_run else 2
 
 
+def cmd_universe(args: argparse.Namespace) -> int:
+    """Report whether the universe is usable, and say what is missing if not."""
+    universe = load_universe()
+    print(f"index      : {universe.index_name or '(unnamed)'}")
+    print(f"status     : {universe.status.value}")
+    print(f"available  : {universe.available}")
+    print(f"transcribed: {len(universe.constituents)} of {universe.expected_count or '?'}")
+    print(f"retrieved  : {universe.retrieved.at or '-'} from {universe.retrieved.source or '-'}")
+
+    if universe.available:
+        for c in universe.constituents:
+            print(f"  {c.ticker:<8}{c.sector:<24}{c.name_en or c.name_ar}")
+        return 0
+
+    print()
+    print("The universe is not usable, so no screening run is possible.")
+    print("This is NOT the same as 'no company is compliant' — nothing has been checked.")
+    print("To populate it: docs/DATA_REQUEST.md §1.")
+    return 0
+
+
+def cmd_intake(args: argparse.Namespace) -> int:
+    """Identify uploaded filings and report what is still missing."""
+    directory = Path(args.directory)
+    try:
+        report = scan_directory(directory)
+    except IntakeError as exc:
+        print(f"intake failed: {exc}")
+        return 2
+
+    print(f"scanned {directory}")
+    print(report.summary())
+    if report.accepted:
+        print("\naccepted")
+        for item in report.accepted:
+            print(f"  {item.label:<20}{item.sha256[:12]}  {item.size_bytes:>10,} bytes  {item.path.name}")
+    print("\ngolden-set coverage")
+    print(missing_summary(report))
+    # An unidentified file is a non-zero exit: it is work the user still has to
+    # do (rename it), not a warning to scroll past.
+    return 0 if not report.unidentified else 1
+
+
+def cmd_tools(args: argparse.Namespace) -> int:
+    """List the tool API surface the agent plane can call."""
+    import tools.analysis_tools
+    import tools.portfolio_tools  # noqa: F401  (registration side effect)
+    from tools.registry import REGISTRY
+
+    for name in sorted(REGISTRY):
+        tool = REGISTRY[name]
+        kind = "write" if tool.write else "read "
+        print(f"  {kind}  {name:<28}{tool.description}")
+    print(f"\n{len(REGISTRY)} tools. Every call is audited; every write is idempotent.")
+    return 0
+
+
+def cmd_routine(args: argparse.Namespace) -> int:
+    """Run one routine once, against the repository's own state files."""
+    from routines.daily import daily_filing_poll, daily_market_refresh
+    from routines.periodic import quarterly_review, weekly_digest
+    from tools.context import build_context
+
+    available = {
+        "daily_filing_poll": daily_filing_poll,
+        "daily_market_refresh": daily_market_refresh,
+        "weekly_digest": weekly_digest,
+        "quarterly_review": quarterly_review,
+    }
+    routine = available.get(args.name)
+    if routine is None:
+        print(f"unknown routine {args.name!r}. Available: {', '.join(sorted(available))}")
+        return 2
+
+    # The one clock read, at the boundary, captured once for the whole run.
+    now = datetime.now(UTC).isoformat(timespec="seconds")
+    if args.dry_run:
+        print(f"[dry-run] would run {args.name} at {now}")
+        return 0
+
+    result = routine(build_context(now))
+    print(f"{result.routine} at {result.at}")
+    print(f"  quiet   : {result.quiet}")
+    print(f"  message : {result.message or '(silent)'}")
+    for failure in result.failures:
+        print(f"  failure : {failure}")
+    return 0 if result.clean else 1
+
+
 
 LEDGER_PATH = "memory/portfolio/ledger.jsonl"
 
@@ -282,6 +374,18 @@ def build_parser() -> argparse.ArgumentParser:
     add("portfolio", cmd_portfolio, "show portfolio state derived from the ledger")
     add("exceptions", cmd_exceptions, "list the DATA_INSUFFICIENT / CONFLICT exception queue")
     add("review", cmd_review, "run a full quarterly review (needs ingestion + credentials)")
+    add("universe", cmd_universe, "show whether the investable universe is populated and usable")
+    add("tools", cmd_tools, "list the tool API surface available to the agent plane")
+
+    intake = sub.add_parser("intake", help="identify uploaded filings and report golden-set coverage")
+    intake.add_argument("directory", help="directory of uploaded PDFs")
+    intake.add_argument("--dry-run", action="store_true", help="accepted for symmetry; intake never writes")
+    intake.set_defaults(func=cmd_intake)
+
+    routine = sub.add_parser("routine", help="run one scheduled routine once")
+    routine.add_argument("name", help="daily_filing_poll | daily_market_refresh | weekly_digest | quarterly_review")
+    routine.add_argument("--dry-run", action="store_true", help="report what would run, touch nothing")
+    routine.set_defaults(func=cmd_routine)
     return parser
 
 
