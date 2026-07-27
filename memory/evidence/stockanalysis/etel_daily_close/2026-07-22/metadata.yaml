@@ -1,0 +1,62 @@
+# Evidence record. Schema and admission rules: memory/evidence/README.md
+
+id: "stockanalysis/etel_daily_close/2026-07-22"
+version: 1
+
+title: "Telecom Egypt (EGX:ETEL) — daily closing prices, 2025-07-22 to 2026-07-22"
+publisher: "stockanalysis.com (data source stated on page: S&P Global Market Intelligence)"
+kind: PRICE_SERIES
+
+file: "prices.tsv"
+media_type: "text/tab-separated-values"
+bytes: 5457
+sha256: "dc9460d289aa838d9b8dd6bd6bb15d4438032e5fa4b83c85bf705f8d3a706e59"
+
+# Last trade date in the series. The window is exactly 365 calendar days.
+as_of: "2026-07-22"
+
+acquired:
+  at: "2026-07-26"
+  via: USER_TRANSCRIPTION
+  original_filename: null
+  url: "https://stockanalysis.com/quote/egx/ETEL/history/"
+  url_verified: false
+
+used_by:
+  - "tests/golden/ETEL/2026-Q1/expected.yaml"
+
+supersedes: null
+superseded_by: null
+
+notes: >
+  244 trading days, 2025-07-22 to 2026-07-22 inclusive, one row per session,
+  no duplicate dates. Pasted by the user from the site's Daily / 1 Year view.
+
+  SCOPE: only `date`, `close` and `change_pct` were transcribed. Open, high,
+  low, adjusted close and volume were present in the source and deliberately
+  dropped — nothing downstream consumes them, and every additional transcribed
+  column is another chance to introduce an error by hand.
+
+  `close` IS THE RAW TRADED PRICE, not the adjusted close. Market
+  capitalisation is what the market actually paid multiplied by shares
+  outstanding; the adjusted series back-adjusts for dividends and drifts below
+  the traded price, which would shrink the denominator of Screens C/D/E and
+  flatter every one of them.
+
+  SELF-VALIDATING. The source publishes a `Change %` column, so the series
+  carries its own checksum: close[t] / close[t-1] - 1 must reproduce it. 231 of
+  232 comparable rows agree within 0.02 percentage points, which is what makes
+  a hand transcription trustworthy here rather than merely plausible.
+
+  THE ONE MISMATCH IS A SOURCE ARTEFACT, NOT A TRANSCRIPTION ERROR.
+  2026-04-28 shows Change +0.90% while its close of 95.00 against the previous
+  close of 95.65 implies -0.68%. The published figure reconciles against the
+  previous ADJUSTED close of 94.15: 95.00 / 94.15 - 1 = +0.90%. That is the
+  dividend ex-date boundary — from 2026-04-28 onward Close and Adj. Close are
+  equal in the source, and before it they diverge. The source mixed an
+  unadjusted close with an adjusted prior close on exactly that row. Closes
+  either side are internally consistent, so the artefact does not propagate.
+
+  A PRIOR PASTE OF THE SAME DATA WAS REJECTED. It arrived with every date cell
+  reading "2026" and covered only 117 sessions. Both defects are recorded in
+  knowledge/EGX_DATA_CONVENTIONS.md.

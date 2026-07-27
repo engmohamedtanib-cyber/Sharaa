@@ -210,31 +210,97 @@ checks_passed:
   - "Note 3 revenue disaggregated three ways, each summing to 28 210 642"
 
 # ---------------------------------------------------------------------
-# EXPECTED SCREENING OUTCOME
+# THE DENOMINATOR (ENGINE_SPEC §2.6)
+# ---------------------------------------------------------------------
+denominator:
+  convention: MCAP_AVG_12M
+  evidence_id: "stockanalysis/etel_daily_close/2026-07-22"
+  window: "2025-07-22 .. 2026-07-22"
+  trading_days: 244
+  average_close_egp: "72.0691"
+  shares_outstanding: 1707071600
+  mcap_avg_12m_egp: "123027111049"
+  assumption: >
+    Shares outstanding are taken as constant across the whole window. The
+    filing evidences 1 707 071 600 at 31/3/2026 AND at 31/12/2025 (capital
+    17 070 716 K is unchanged on both balance-sheet columns), so the figure is
+    verified for that quarter only. Jul-Dec 2025 is UNVERIFIED. The FY2025
+    annual report settles it; until then this run is PROVISIONAL.
+
+# ---------------------------------------------------------------------
+# SCREENING OUTCOME — first real screen this project has ever run
 # ---------------------------------------------------------------------
 expected_screening:
   status: DATA_INSUFFICIENT
   breach_type: TYPE_4_DATA
-  blocking_reasons:
-    - screen: B
-      reason: >
-        Interest income is not separately disclosed anywhere in the document
-        (see line_items.interest_income). The numerator cannot be formed.
-    - screens: [C, D, E]
-      reason: >
-        The denominator is mcap_avg_12m (config/thresholds.yaml
-        denominator_convention). A trailing 12-month average market
-        capitalisation is not in any filing and no market-data source exists
-        yet. Shares outstanding are known; the price history is not.
-  computable_today: [A]
-  notes: >
-    Screen A has no non-permissible revenue visible: Note 3-1 disaggregates
-    all 28 210 642 across five telecom business units. That is consistent
-    with a pass, but absence of a disclosed line is not evidence of zero, and
-    a single passing screen cannot lift a DATA_INSUFFICIENT verdict anyway —
-    the gate requires all five (R7).
+  investable: false
 
-    THIS OUTCOME IS THE CORRECT ONE, not a failure of the exercise. A
-    condensed interim with a narrative finance-cost note genuinely does not
-    contain what the gate needs. The right next document is the most recent
-    AUDITED ANNUAL report, whose notes are not condensed.
+  # The formal status is DATA_INSUFFICIENT because Screen B has no numerator,
+  # so the gate cannot be completed. But the gate is a conjunction, and a
+  # screen that IS computable already fails outright — Screen B's absence
+  # cannot rescue this company, it can only fail to condemn it twice.
+  decisive_finding: >
+    Screen C is 61.87% against a 30% limit — utilisation 206%. Both inputs are
+    fully sourced: interest-bearing debt from the balance sheet and note 23,
+    the denominator from 244 cited daily closes. ETEL is excluded.
+
+  screens:
+    A:
+      status: NOT_COMPUTED
+      note: >
+        Note 3-1 disaggregates all 28 210 642 of revenue across five telecom
+        business units with no non-permissible line visible. Consistent with a
+        pass, but absence of a disclosed line is not evidence of zero.
+    B:
+      status: NOT_COMPUTABLE
+      reason: "interest income is not disclosed (see line_items.interest_income)"
+    C:
+      numerator_egp: "76113556000"
+      numerator_note: "short_term_borrowings + long_term_borrowings; no overdraft or bonds separately disclosed"
+      ratio: "0.6187"
+      threshold: "0.30"
+      utilisation: "2.062"
+      status: RED
+    D:
+      numerator_egp: "12823976000"
+      numerator_note: >
+        cash_and_equivalents 10 077 268 + treasury bills 2 746 708, in
+        thousands. time_deposits and money-market funds are set to ZERO on
+        purpose: note 21 shows them as COMPONENTS of cash and cash
+        equivalents, so adding them again would double count 2 612 508.
+      ratio: "0.1042"
+      threshold: "0.30"
+      utilisation: "0.347"
+      status: GREEN
+    E:
+      numerator_egp: "21723785000"
+      numerator_note: "trade and notes receivables only; 'debtors and other debit balances' excluded — see line_items.accounts_receivable.ambiguity"
+      ratio: "0.1766"
+      threshold: "0.49"
+      utilisation: "0.360"
+      status: GREEN
+
+  # The verdict does not depend on the averaging convention. Screen C breaches
+  # under every denominator that can be defended from the evidence:
+  robustness:
+    twelve_month_average: "0.6187"     # the rule
+    last_close_103_28:    "0.4317"
+    window_high_112_98:   "0.3946"     # most generous possible
+    price_to_pass_30pct:  "148.62"     # vs 103.28 on 2026-07-22
+
+  notes: >
+    Screen C's severity is not an artefact of a depressed average. The stock
+    rose from 37.61 to 103.28 across the window, so the 12-month mean of 72.07
+    sits far below today's price — yet even valuing the whole company at its
+    52-week HIGH leaves the ratio at 39.46%, still a third above the limit.
+    The company would have to trade at 148.62 EGP, 44% above today, to pass.
+
+    Telecom Egypt is a capital-intensive infrastructure operator carrying
+    76.1bn EGP of conventional borrowings. That is an ordinary balance sheet
+    for its industry and an ordinary reason to fail an equity-based debt
+    screen. Index membership did not catch it; independent screening did,
+    which is the entire argument of decisions/0004.
+
+    STILL PROVISIONAL, for two reasons that must be closed before any decision
+    cites this run: the share count is unverified before 31/12/2025, and
+    Screen B remains uncomputable. Neither can overturn Screen C.

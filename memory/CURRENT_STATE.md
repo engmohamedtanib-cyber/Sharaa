@@ -88,6 +88,37 @@ with no text layer** (OCR/vision mandatory); a **condensed interim is structural
 insufficient** for the gate, so prefer audited annuals; and **three of five screens are
 blocked on price history, not on filings**.
 
+## FIRST REAL SCREEN RUN (2026-07-26) — ETEL is excluded
+
+The engine has now produced a verdict from real, cited data end to end. Price series:
+evidence `stockanalysis/etel_daily_close/2026-07-22`, 244 daily closes over exactly 365
+days, self-validated against the source's own `Change %` column (231/232 rows agree; the
+one exception is an explained dividend ex-date artefact).
+
+| Screen | Ratio | Limit | Status |
+|---|---|---|---|
+| **C — Debt** | **61.87%** | 30% | **RED — utilisation 206%** |
+| D — Liquidity | 10.42% | 30% | GREEN |
+| E — Receivables | 17.66% | 49% | GREEN |
+| A | — | 5% | not computed (no non-permissible line visible) |
+| B | — | 5% | **not computable** — interest income undisclosed |
+
+`mcap_avg_12m` = 72.0691 avg close x 1 707 071 600 shares = **123.0bn EGP**.
+Debt = 76.1bn (short + long term borrowings, reconciled to note 23).
+
+**The verdict is robust to the averaging convention.** Screen C breaches under every
+defensible denominator: 61.87% on the 12-month mean, 43.17% at the last close, and 39.46%
+even at the 52-week high. ETEL would need to trade at **148.62 EGP** — 44% above today — to
+pass. Full working: `tests/golden/ETEL/2026-Q1/expected.yaml`.
+
+Formal status stays `DATA_INSUFFICIENT` (Screen B has no numerator, so the gate cannot
+complete), but the gate is a conjunction and a computable screen already fails outright.
+**This is the thesis of `decisions/0004` demonstrated once, on real data: the index included
+ETEL; independent screening excludes it.**
+
+Still provisional on two points, neither able to overturn Screen C: the share count is
+verified only from 31/12/2025, and Screen B remains blocked.
+
 ## Execution fees are real now (decisions/0007)
 
 `config/thresholds.yaml` v1.1.0 carries Thndr's published schedule (evidence

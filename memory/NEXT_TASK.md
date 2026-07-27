@@ -4,7 +4,24 @@ One task. Not a backlog. When it is done, replace this file with the next one.
 
 ---
 
-## Now: M2 — Investment Policy Statement
+## Now: close out ETEL, then take a second company through the same path
+
+ETEL was screened end to end on 2026-07-26 and **fails Screen C at 61.87% against a 30%
+limit** (`tests/golden/ETEL/2026-Q1/expected.yaml`). Two things still hold it at
+`DATA_INSUFFICIENT` rather than a clean, citable breach, and both are cheap to close:
+
+1. **Share count before 31/12/2025 is unverified.** The FY2025 annual report states capital
+   at both year ends and settles it. Neither outcome can overturn Screen C — a share count
+   large enough to pass would have to be 44% higher than reported.
+2. **Screen B has no numerator.** The condensed interim does not disclose interest income;
+   the full annual notes are expected to. If they do not, Screen B is structurally
+   uncomputable for this company and that is itself a finding worth recording.
+
+Then run a second constituent through the identical path. ETEL is one company and one
+industry; a telecom carrying heavy conventional debt is not evidence about the other 32.
+Pick one where the answer is not obviously predetermined.
+
+## Then: M2 — Investment Policy Statement
 
 Build `engine/policy.py` + `config/ips_schema.yaml`. Versioned, append-only, and it may
 only **add** exclusions — a policy that would admit a gate-failing company is rejected at
